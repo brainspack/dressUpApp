@@ -1,6 +1,16 @@
 # OSX
 #
 .DS_Store
+# Android build
+android/.gradle
+android/app/build
+
+# APKs
+*.apk
+*.ap_
+
+# .so files
+*.so
 
 # Xcode
 #
