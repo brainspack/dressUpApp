@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useLanguage } from '../context/LanguageContext';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { AuthProvider, useAuth } from '../context/AuthContext';
+import { ActivityIndicator, View } from 'react-native';
 
 // Import screens
 import LoginScreen from '../screens/Auth/Login';
+import RegisterScreen from '../screens/Auth/Register';
 import Home from '../screens/Home';
 import CustomerListScreen from '../screens/Customer/CustomerList';
 import CustomerDetailsScreen from '../screens/Customer/CustomerDetails';
@@ -36,14 +39,19 @@ const OrderStack = createNativeStackNavigator<OrderStackParamList>();
 const ClothesStack = createNativeStackNavigator<ClothesStackParamList>();
 
 // Auth Navigator
-const AuthNavigator = () => {
+const AuthNavigator = ({ setIsAuthenticated }: { setIsAuthenticated: (v: boolean) => void }) => {
   return (
     <AuthStack.Navigator
       screenOptions={{
         headerShown: false,
       }}
     >
-      <AuthStack.Screen name="Login" component={LoginScreen} />
+      <AuthStack.Screen name="Login">
+        {props => <LoginScreen {...props} setIsAuthenticated={setIsAuthenticated} />}
+      </AuthStack.Screen>
+      <AuthStack.Screen name="Register">
+        {props => <RegisterScreen {...props} setIsAuthenticated={setIsAuthenticated} />}
+      </AuthStack.Screen>
     </AuthStack.Navigator>
   );
 };
@@ -165,15 +173,25 @@ const MainNavigator = () => {
 };
 
 // Root Navigator
-const AppNavigator = () => {
+const AppNavigatorInner = () => {
   const { currentLanguage } = useLanguage();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, setIsAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!isAuthenticated ? (
-          <Stack.Screen name="Auth" component={AuthNavigator} />
+          <Stack.Screen name="Auth">
+            {() => <AuthNavigator setIsAuthenticated={setIsAuthenticated} />}
+          </Stack.Screen>
         ) : (
           <Stack.Screen name="Main" component={MainNavigator} />
         )}
@@ -181,5 +199,11 @@ const AppNavigator = () => {
     </NavigationContainer>
   );
 };
+
+const AppNavigator = () => (
+  <AuthProvider>
+    <AppNavigatorInner />
+  </AuthProvider>
+);
 
 export default AppNavigator; 

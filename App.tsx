@@ -11,6 +11,9 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './src/i18n/config';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { ActivityIndicator, View } from 'react-native';
+import apiService from './src/services/api';
 
 // Import screens
 import Home from './src/screens/Home';
@@ -82,15 +85,6 @@ function ClothesStackNavigator() {
   );
 }
 
-function AuthStack() {
-  return (
-    <Stack.Navigator screenOptions={{headerShown: false}}>
-      <Stack.Screen name="Login" component={Login} />
-      <Stack.Screen name="Register" component={Register} />
-    </Stack.Navigator>
-  );
-}
-
 function MainTabs() {
   return (
     <Tab.Navigator
@@ -108,17 +102,54 @@ function MainTabs() {
   );
 }
 
-function App(): React.JSX.Element {
-  const isAuthenticated = true;
+function AuthStackWithContext() {
+  const { setIsAuthenticated, setAccessToken } = useAuth();
+  return (
+    <Stack.Navigator screenOptions={{headerShown: false}}>
+      <Stack.Screen name="Login">
+        {props => <Login {...props} setIsAuthenticated={setIsAuthenticated} setAccessToken={setAccessToken} />}
+      </Stack.Screen>
+      <Stack.Screen name="Register">
+        {props => <Register {...props} setIsAuthenticated={setIsAuthenticated} setAccessToken={setAccessToken} />}
+      </Stack.Screen>
+    </Stack.Navigator>
+  );
+}
+
+function AppInner(): React.JSX.Element {
+  const { isAuthenticated, loading, accessToken } = useAuth();
+
+  // Set access token in API service when available
+  React.useEffect(() => {
+    if (accessToken) {
+      apiService.setAccessToken(accessToken);
+    }
+  }, [accessToken]);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <I18nextProvider i18n={i18n}>
       <NavigationContainer>
         {isAuthenticated 
         ? <MainTabs /> :
-         <AuthStack />}
+         <AuthStackWithContext />}
       </NavigationContainer>
     </I18nextProvider>
+  );
+}
+
+function App(): React.JSX.Element {
+  return (
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
   );
 }
 

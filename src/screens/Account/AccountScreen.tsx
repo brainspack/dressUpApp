@@ -4,10 +4,13 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import LanguageSelector from '../../components/LanguageSelector';
 import { useTranslation } from 'react-i18next';
 import useLanguageStore from '../../store/languageStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../context/AuthContext';
 
 const AccountScreen = () => {
   const { t } = useTranslation();
   const { language } = useLanguageStore();
+  const { setIsAuthenticated } = useAuth();
 
   // Dummy initial profile data
   const [name, setName] = useState('John Doe');
@@ -41,6 +44,12 @@ const AccountScreen = () => {
     Alert.alert('Saved', `Name: ${name}\nLanguage: ${language}\nAvatar: ${avatar}`);
   };
 
+  // Logout handler
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem('accessToken');
+    setIsAuthenticated(false);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>{t('profile.profile')}</Text>
@@ -61,6 +70,9 @@ const AccountScreen = () => {
       </View>
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={styles.saveButtonText}>{t('common.save')}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>
     </View>
   );
@@ -92,6 +104,18 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  logoutButton: {
+    backgroundColor: '#ef4444',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  logoutButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',

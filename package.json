@@ -8,10 +8,9 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest"
-
   },
   "dependencies": {
-    "@react-native-async-storage/async-storage": "^2.1.2",
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "^8.3.0",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/native": "^7.1.6",

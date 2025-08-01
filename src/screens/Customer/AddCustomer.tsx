@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import apiService from '../../services/api';
 
 interface CustomerForm {
   name: string;
@@ -17,6 +18,7 @@ interface CustomerForm {
 
 const AddCustomer = () => {
   const navigation = useNavigation();
+  const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState<CustomerForm>({
     name: '',
     phone: '',
@@ -30,10 +32,73 @@ const AddCustomer = () => {
     },
   });
 
-  const handleSubmit = () => {
-    // TODO: Implement customer creation logic
-    console.log('Creating customer:', form);
-    navigation.goBack();
+  // Reset form when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setForm({
+        name: '',
+        phone: '',
+        email: '',
+        address: '',
+        measurements: {
+          height: '',
+          chest: '',
+          waist: '',
+          hips: '',
+        },
+      });
+    }, [])
+  );
+
+  const handleSubmit = async () => {
+    // Validate required fields
+    if (!form.name.trim()) {
+      Alert.alert('Error', 'Name is required');
+      return;
+    }
+    if (!form.phone.trim()) {
+      Alert.alert('Error', 'Phone number is required');
+      return;
+    }
+
+    // Validate phone number format
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(form.phone.trim())) {
+      Alert.alert('Error', 'Please enter a valid 10-digit phone number');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log('Creating customer:', form);
+      
+      const customerData = {
+        name: form.name.trim(),
+        mobileNumber: form.phone.trim(),
+        address: form.address.trim() || undefined,
+        // Note: email and measurements are not supported by the backend yet
+        // They will be handled separately in future updates
+      };
+
+      const result = await apiService.createCustomer(customerData);
+      console.log('Customer created successfully:', result);
+      console.log('Customer ID:', result.id);
+      console.log('Customer Name:', result.name);
+      console.log('Customer Mobile:', result.mobileNumber);
+      Alert.alert('Success', 'Customer added successfully!');
+      navigation.goBack();
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create customer';
+      
+      if (errorMessage.includes('already exists')) {
+        Alert.alert('Error', 'A customer with this phone number already exists. Please use a different phone number.');
+      } else {
+        Alert.alert('Error', errorMessage);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -121,8 +186,14 @@ const AddCustomer = () => {
         />
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Add Customer</Text>
+      <TouchableOpacity 
+        style={[styles.button, isLoading && styles.buttonDisabled]} 
+        onPress={handleSubmit}
+        disabled={isLoading}
+      >
+        <Text style={styles.buttonText}>
+          {isLoading ? 'Adding Customer...' : 'Add Customer'}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -166,6 +237,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  buttonDisabled: {
+    backgroundColor: '#9ca3af',
   },
 });
 
