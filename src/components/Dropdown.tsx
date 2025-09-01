@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, FlatList, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 interface DropdownProps {
   label?: string;
@@ -19,12 +20,13 @@ const Dropdown = ({ label, value, options, onChange, error, placeholder = 'Selec
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
       <TouchableOpacity
-        style={[styles.dropdown, error && styles.dropdownError]}
+        style={[styles.dropdownUnderline, error && styles.dropdownError]}
         onPress={() => setIsOpen(true)}
       >
         <Text style={[styles.dropdownText, !selectedOption && styles.placeholder]}>
           {selectedOption ? selectedOption.label : placeholder}
         </Text>
+        <Icon name="chevron-down" size={19} color="#6b7280" />
       </TouchableOpacity>
       {error && <Text style={styles.errorText}>{error}</Text>}
 
@@ -79,21 +81,26 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: '#333',
   },
-  dropdown: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-    backgroundColor: '#fff',
+  dropdownUnderline: {
+    height: 30,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+    paddingHorizontal: 1,
+    justifyContent: 'flex-start',
+    alignSelf: 'flex-start',
+    gap: 4,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    flexDirection: 'row',
   },
   dropdownError: {
     borderColor: '#ff3b30',
   },
   dropdownText: {
-    fontSize: 16,
+    fontSize: 14,
+    lineHeight: 14,
     color: '#333',
+    marginRight: 6,
   },
   placeholder: {
     color: '#999',
@@ -118,26 +125,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    padding: 10,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     color: '#333',
   },
   closeButton: {
-    fontSize: 20,
+    fontSize: 18,
     color: '#666',
   },
   option: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
   optionText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#333',
   },
   selectedOptionText: {

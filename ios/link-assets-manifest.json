@@ -1,0 +1,29 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "src/assets/fonts/LibertinusSans-Italic.otf",
+      "sha1": "191496ac57ba8b2c34214cbc0af23462c125d024"
+    },
+    {
+      "path": "src/assets/fonts/LibertinusSans-Regular.otf",
+      "sha1": "76a85f68b80b496133122a3d256f9becc05c3eff"
+    },
+    {
+      "path": "src/assets/fonts/PlayfairDisplay-Italic.ttf",
+      "sha1": "48ed67153ab15e0a40527878320ad6ab483caa00"
+    },
+    {
+      "path": "src/assets/fonts/PlayfairDisplay-Regular.ttf",
+      "sha1": "48c7f8439720a41a9a11d976f043f013be37f206"
+    },
+    {
+      "path": "src/assets/fonts/Roboto-Italic.ttf",
+      "sha1": "8cba6993050ac634fd7b1182e60964f6e0f8f978"
+    },
+    {
+      "path": "src/assets/fonts/Roboto-Regular.ttf",
+      "sha1": "695ba6bb639fc29b7ab6ce9075006a4d199273c6"
+    }
+  ]
+}

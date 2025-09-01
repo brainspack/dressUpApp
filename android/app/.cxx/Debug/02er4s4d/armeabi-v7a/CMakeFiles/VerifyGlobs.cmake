@@ -62,6 +62,31 @@ if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
   file(TOUCH_NOCREATE "/Users/brainspack/tailor_system/dressUpApp/android/app/.cxx/Debug/02er4s4d/armeabi-v7a/CMakeFiles/cmake.verify_globs")
 endif()
 
+# react_codegen_SRCS at /Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/*.cpp")
+set(OLD_GLOB
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/rngesturehandler_codegen-generated.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/brainspack/tailor_system/dressUpApp/android/app/.cxx/Debug/02er4s4d/armeabi-v7a/CMakeFiles/cmake.verify_globs")
+endif()
+
+# react_codegen_SRCS at /Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/react/renderer/components/rngesturehandler_codegen/*.cpp")
+set(OLD_GLOB
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/react/renderer/components/rngesturehandler_codegen/ComponentDescriptors.cpp"
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/react/renderer/components/rngesturehandler_codegen/EventEmitters.cpp"
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/react/renderer/components/rngesturehandler_codegen/Props.cpp"
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/react/renderer/components/rngesturehandler_codegen/ShadowNodes.cpp"
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/react/renderer/components/rngesturehandler_codegen/States.cpp"
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/react/renderer/components/rngesturehandler_codegen/rngesturehandler_codegenJSI-generated.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/brainspack/tailor_system/dressUpApp/android/app/.cxx/Debug/02er4s4d/armeabi-v7a/CMakeFiles/cmake.verify_globs")
+endif()
+
 # react_codegen_SRCS at /Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
 file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/*.cpp")
 set(OLD_GLOB
@@ -177,6 +202,44 @@ set(OLD_GLOB
   "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-screens/android/src/main/jni/../../../build/generated/source/codegen/jni/react/renderer/components/rnscreens/ShadowNodes.cpp"
   "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-screens/android/src/main/jni/../../../build/generated/source/codegen/jni/react/renderer/components/rnscreens/States.cpp"
   "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-screens/android/src/main/jni/../../../build/generated/source/codegen/jni/react/renderer/components/rnscreens/rnscreensJSI-generated.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/brainspack/tailor_system/dressUpApp/android/app/.cxx/Debug/02er4s4d/armeabi-v7a/CMakeFiles/cmake.verify_globs")
+endif()
+
+# rnsvg_SRCS at /Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/CMakeLists.txt:10 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/*.cpp")
+set(OLD_GLOB
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/rnsvg.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/brainspack/tailor_system/dressUpApp/android/app/.cxx/Debug/02er4s4d/armeabi-v7a/CMakeFiles/cmake.verify_globs")
+endif()
+
+# rnsvg_SRCS at /Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/CMakeLists.txt:10 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/../../../../common/cpp/react/renderer/components/rnsvg/*.cpp")
+set(OLD_GLOB
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/../../../../common/cpp/react/renderer/components/rnsvg/RNSVGImageShadowNode.cpp"
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/../../../../common/cpp/react/renderer/components/rnsvg/RNSVGImageState.cpp"
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/../../../../common/cpp/react/renderer/components/rnsvg/RNSVGLayoutableShadowNode.cpp"
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/../../../../common/cpp/react/renderer/components/rnsvg/RNSVGShadowNodes.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/brainspack/tailor_system/dressUpApp/android/app/.cxx/Debug/02er4s4d/armeabi-v7a/CMakeFiles/cmake.verify_globs")
+endif()
+
+# rnsvg_codegen_SRCS at /Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/CMakeLists.txt:11 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/../../../build/generated/source/codegen/jni/react/renderer/components/rnsvg/*cpp")
+set(OLD_GLOB
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/../../../build/generated/source/codegen/jni/react/renderer/components/rnsvg/ComponentDescriptors.cpp"
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/../../../build/generated/source/codegen/jni/react/renderer/components/rnsvg/EventEmitters.cpp"
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/../../../build/generated/source/codegen/jni/react/renderer/components/rnsvg/Props.cpp"
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/../../../build/generated/source/codegen/jni/react/renderer/components/rnsvg/ShadowNodes.cpp"
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/../../../build/generated/source/codegen/jni/react/renderer/components/rnsvg/States.cpp"
+  "/Users/brainspack/tailor_system/dressUpApp/node_modules/react-native-svg/android/src/main/jni/../../../build/generated/source/codegen/jni/react/renderer/components/rnsvg/rnsvgJSI-generated.cpp"
   )
 if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
   message("-- GLOB mismatch!")

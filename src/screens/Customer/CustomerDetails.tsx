@@ -1,41 +1,210 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import LinearGradient from 'react-native-linear-gradient';
+import apiService from '../../services/api';
+import Button from '../../components/Button';
+import { CustomerStackParamList } from '../../navigation/types';
+import { RegularText, TitleText } from '../../components/CustomText';
+import colors from '../../constants/colors';
+
+interface CustomerDetailsRouteParams {
+  customerId: string;
+}
 
 interface Customer {
   id: string;
+  serialNumber?: number;
   name: string;
-  phone: string;
-  email: string;
-  address: string;
-  measurements: {
-    height: number;
-    chest: number;
-    waist: number;
-    hips: number;
-  };
+  mobileNumber: string;
+  address?: string;
+  createdAt: string;
 }
 
 const CustomerDetails = () => {
-  const route = useRoute();
-  const customer = route.params?.customer as Customer;
+  const navigation = useNavigation<any>();
+  const route = useRoute<RouteProp<CustomerStackParamList, 'CustomerDetails'>>();
+  const { customerId } = route.params;
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCustomerDetails();
+  }, [customerId]);
+
+  // Refresh data when screen comes back into focus (e.g., after editing)
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('[CustomerDetails] Screen focused, refreshing data for customerId:', customerId);
+      if (customerId) {
+        fetchCustomerDetails();
+      }
+    }, [customerId])
+  );
+
+  const fetchCustomerDetails = async () => {
+    try {
+      console.log('[CustomerDetails] Fetching customer details for ID:', customerId);
+      setLoading(true);
+      const customerData = await apiService.getCustomerById(customerId);
+      console.log('[CustomerDetails] Received customer data:', customerData);
+      setCustomer(customerData);
+    } catch (error) {
+      console.error('Error fetching customer details:', error);
+      Alert.alert('Error', 'Failed to fetch customer details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    Alert.alert(
+      'Delete Customer',
+      'Are you sure you want to delete this customer? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await apiService.deleteCustomer(customerId);
+              Alert.alert('Success', 'Customer deleted successfully');
+              (navigation as any).goBack();
+            } catch (e) {
+              Alert.alert('Error', 'Failed to delete customer');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const getCustomerNumber = (customer: Customer) => {
+    if (customer.serialNumber) {
+      return `CUS-${String(customer.serialNumber).padStart(4, '0')}`;
+    }
+    // Fallback: generate from ID hash
+    const hash = Math.abs(Array.from(customer.id).reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0)) % 10000;
+    return `CUS-${String(hash).padStart(4, '0')}`;
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.brand} />
+        <RegularText style={styles.loadingText}>Loading customer details...</RegularText>
+      </View>
+    );
+  }
+
+  if (!customer) {
+    return (
+      <View style={styles.errorContainer}>
+        <Icon name="error-outline" size={64} color={colors.danger} />
+        <TitleText style={styles.errorTitle}>Customer Not Found</TitleText>
+        <RegularText style={styles.errorText}>The customer you're looking for doesn't exist or has been deleted.</RegularText>
+        <Button
+          variant="gradient"
+          title="Go Back"
+          height={48}
+          gradientColors={['#229B73', '#1a8f6e', '#000000']}
+          onPress={() => (navigation as any).goBack()}
+          style={{ marginTop: 24, borderRadius: 12 }}
+        />
+      </View>
+    );
+  }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Personal Information</Text>
-        <Text style={styles.text}>Name: {customer.name}</Text>
-        <Text style={styles.text}>Phone: {customer.phone}</Text>
-        <Text style={styles.text}>Email: {customer.email}</Text>
-        <Text style={styles.text}>Address: {customer.address}</Text>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Profile Header Card */}
+      <View style={styles.profileCard}>
+        <LinearGradient
+          colors={['#229B73', '#1a8f6e', '#000000']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.profileGradient}
+        >
+          <View style={styles.profileIconContainer}>
+            <Icon name="person" size={48} color="#ffffff" />
+          </View>
+          <TitleText style={styles.customerName}>{customer.name}</TitleText>
+          <RegularText style={styles.customerNumber}>{getCustomerNumber(customer)}</RegularText>
+        </LinearGradient>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Measurements</Text>
-        <Text style={styles.text}>Height: {customer.measurements.height} cm</Text>
-        <Text style={styles.text}>Chest: {customer.measurements.chest} cm</Text>
-        <Text style={styles.text}>Waist: {customer.measurements.waist} cm</Text>
-        <Text style={styles.text}>Hips: {customer.measurements.hips} cm</Text>
+      {/* Customer Information Section */}
+      <View style={styles.infoSection}>
+        <View style={styles.sectionHeader}>
+          <TitleText style={styles.sectionTitle}>Contact Information</TitleText>
+          <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
+            <Icon name="delete-outline" size={24} color="#ef4444" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Phone Number */}
+        <View style={styles.infoRow}>
+          <View style={styles.infoIconContainer}>
+            <Icon name="phone" size={20} color={colors.brand} />
+          </View>
+          <View style={styles.infoContent}>
+            <RegularText style={styles.infoLabel}>Phone Number</RegularText>
+            <RegularText style={styles.infoValue}>{customer.mobileNumber}</RegularText>
+          </View>
+        </View>
+
+        {/* Address */}
+        <View style={styles.infoRow}>
+          <View style={styles.infoIconContainer}>
+            <Icon name="location-on" size={20} color={colors.brand} />
+          </View>
+          <View style={styles.infoContent}>
+            <RegularText style={styles.infoLabel}>Address</RegularText>
+            <RegularText style={styles.infoValue}>
+              {customer.address || 'No address provided'}
+            </RegularText>
+          </View>
+        </View>
+
+        {/* Customer Since */}
+        <View style={styles.infoRow}>
+          <View style={styles.infoIconContainer}>
+            <Icon name="event" size={20} color={colors.brand} />
+          </View>
+          <View style={styles.infoContent}>
+            <RegularText style={styles.infoLabel}>Customer Since</RegularText>
+            <RegularText style={styles.infoValue}>
+              {new Date(customer.createdAt).toLocaleDateString()}
+            </RegularText>
+          </View>
+        </View>
+      </View>
+
+      {/* Action Buttons */}
+      <View style={styles.actionSection}>
+        <Button
+          variant="gradient"
+          title="Edit Customer"
+          height={56}
+          gradientColors={['#229B73', '#1a8f6e', '#000000']}
+          icon={<Icon name="edit" size={24} color="#fff" />}
+          onPress={() => navigation.navigate('EditCustomer', { customerId: customer.id })}
+          style={{ marginBottom: 12, borderRadius: 12 }}
+        />
+        
+        <Button
+          variant="light"
+          title="Create Order"
+          height={56}
+          onPress={() => navigation.navigate('OutfitSelection', { 
+            customerId: customer.id,
+            shopId: customer.shopId,
+            customerName: customer.name
+          })}
+          style={{ borderRadius: 12 }}
+        />
       </View>
     </ScrollView>
   );
@@ -44,21 +213,134 @@ const CustomerDetails = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8fafc',
   },
-  section: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    padding: 24,
+  },
+  errorTitle: {
+    fontSize: 24,
+    color: colors.textPrimary,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  profileCard: {
+    margin: 16,
+    borderRadius: 20,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+  },
+  profileGradient: {
+    padding: 32,
+    alignItems: 'center',
+  },
+  profileIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  customerName: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  customerNumber: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '600',
+  },
+  infoSection: {
+    margin: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
   },
-  text: {
+  deleteButton: {
+    padding: 8,
+    backgroundColor: '#fef2f2',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  infoIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0fdf4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  infoContent: {
+    flex: 1,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  infoValue: {
     fontSize: 16,
-    marginBottom: 8,
+    color: colors.textPrimary,
+    fontWeight: '600',
+    lineHeight: 22,
+  },
+  actionSection: {
+    margin: 16,
+    marginBottom: 32,
   },
 });
 

@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, TextInput, StyleSheet as RNStyleSheet } from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';             
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CustomerStackParamList } from '../../navigation/types';
+import { CustomerStackParamList, MainTabParamList } from '../../navigation/types';
 import Button from '../../components/Button';
+import colors from '../../constants/colors';
 import Input from '../../components/Input';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import apiService from '../../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import LinearGradient from 'react-native-linear-gradient';
+import { useTranslation } from 'react-i18next';
 
 type CustomerListScreenNavigationProp = NativeStackNavigationProp<CustomerStackParamList, 'CustomerList'>;
 
@@ -20,11 +25,13 @@ interface Customer {
 
 const CustomerList = () => {
   const navigation = useNavigation<CustomerListScreenNavigationProp>();
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentShopId, setCurrentShopId] = useState<string | null>(null);
 
   const fetchCustomers = async () => {
     try {
@@ -75,6 +82,13 @@ const CustomerList = () => {
     fetchCustomers();
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      const sid = await AsyncStorage.getItem('shopId');
+      setCurrentShopId(sid);
+    })();
+  }, []);
+
   // Refresh customers when screen comes into focus (e.g., after adding a customer)
   useFocusEffect(
     React.useCallback(() => {
@@ -82,46 +96,120 @@ const CustomerList = () => {
     }, [])
   );
 
+  const onDelete = async (id: string) => {
+    try {
+      await apiService.deleteCustomer(id);
+      setAllCustomers(prev => prev.filter(c => c.id !== id));
+      setCustomers(prev => prev.filter(c => c.id !== id));
+    } catch (e) {
+      console.error('Failed to delete customer', e);
+    }
+  };
+
+  const openOutfitSelection = (customer: Customer) => {
+    // Navigate to OutfitSelection screen with customer info pre-filled
+    (navigation as any).navigate('Orders', {
+      screen: 'OutfitSelection',
+      params: { 
+        customerId: customer.id, 
+        customerName: customer.name, 
+        shopId: customer.shopId
+      },
+    });
+  };
+
   const renderCustomerItem = ({ item }: { item: Customer }) => (
     <View style={styles.customerItem}>
+      <LinearGradient
+        colors={['#229B73', '#1a8f6e', '#000000']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.cardAccent}
+      />
       <TouchableOpacity
         style={styles.customerInfo}
         onPress={() => navigation.navigate('CustomerDetails', { customerId: item.id })}
       >
-        <Text style={styles.customerName}>{item.name}</Text>
-        <Text style={styles.customerContact}>{item.mobileNumber}</Text>
-        <Text style={styles.customerAddress}>{item.address || 'No address'}</Text>
-        <Text style={styles.customerDate}>Added: {new Date(item.createdAt).toLocaleDateString()}</Text>
+        <View style={styles.customerField}>
+          <Icon name="person" size={16} color="#229B73" style={styles.fieldIcon} />
+          <Text style={styles.customerName}>{item.name}</Text>
+        </View>
+        <View style={styles.customerField}>
+          <Icon name="phone" size={16} color="#64748b" style={styles.fieldIcon} />
+          <Text style={styles.customerContact}>{item.mobileNumber}</Text>
+        </View>
+        <View style={styles.customerField}>
+          <Icon name="location-on" size={16} color="#6b7280" style={styles.fieldIcon} />
+          <Text style={styles.customerAddress}>{item.address || t('customer.noAddress')}</Text>
+        </View>
+        <View style={styles.customerField}>
+          <Icon name="event" size={16} color="#9ca3af" style={styles.fieldIcon} />
+          <Text style={styles.customerDate}>{t('common.added')}: {new Date(item.createdAt).toLocaleDateString()}</Text>
+        </View>
       </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.orderButton}
-        onPress={() => {
-          // TODO: Navigate to AddOrder screen
-          console.log('Order button pressed for customer:', item.name);
-        }}
-      >
-        <Text style={styles.orderButtonText}>Order</Text>
-      </TouchableOpacity>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Button
+          variant="gradient"
+          title={t('order.order')}
+          height={36}
+          gradientColors={['#229B73', '#1a8f6e', '#000000']}
+          onPress={() => {
+            // We are inside Customers tab; navigate to Orders stack's screen
+            const parent = (navigation as any).getParent?.();
+            if (parent) {
+              parent.navigate('Orders', {
+                screen: 'OutfitSelection',
+                params: { customerId: item.id, customerName: item.name, shopId: item.shopId },
+              });
+            } else {
+              (navigation as any).navigate('Orders', {
+                screen: 'OutfitSelection',
+                params: { customerId: item.id, customerName: item.name, shopId: item.shopId },
+              });
+            }
+          }}
+          style={{ width: 96, borderRadius: 8 }}
+        />
+        {/* <TouchableOpacity onPress={() => onDelete(item.id)} style={styles.deleteIconBtn}>
+          <Icon name="delete-outline" size={22} color="#ef4444" />
+        </TouchableOpacity> */}
+      </View>
     </View>
   );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Input
-          placeholder="Search customers..."
-          value={searchQuery}
-          onChangeText={(text) => {
-            setSearchQuery(text);
-            filterCustomers(text);
-          }}
-          style={styles.searchInput}
-        />
+        {/* Search bar styled like the mock */}
+        <View style={styles.searchContainer}>
+          <Icon name="search" size={20} color="#64748b" style={{ marginRight: 8 }} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder={t('customer.searchCustomer')}
+            placeholderTextColor="#9ca3af"
+            value={searchQuery}
+            onChangeText={(text) => { setSearchQuery(text); filterCustomers(text); }}
+            autoCorrect={false}
+            autoCapitalize="none"
+          />
+        </View>
+
+        {/* Gradient Add Customer button with plus icon */}
         <Button
-          title="Add Customer"
+          variant="gradient"
+          title={t('customer.addCustomer')}
+          height={56}
+          gradientColors={['#229B73', '#1a8f6e', '#000000']}
+          icon={<Icon name="add" size={24} color="#fff" />}
           onPress={() => navigation.navigate('AddCustomer')}
-          variant="primary"
+          style={{ borderRadius: 12 }}
         />
+
+        <View style={styles.totalInline}>
+          <Text style={[styles.totalInlineText, { alignSelf: 'flex-end' }]}>
+            {`${t('customer.customers')}: ${customers.filter(c => !currentShopId || c.shopId === currentShopId).length}`}
+          </Text>
+        </View>
       </View>
 
       <FlatList
@@ -134,7 +222,7 @@ const CustomerList = () => {
         }
         ListEmptyComponent={
           <Text style={styles.emptyText}>
-            {loading ? 'Loading customers...' : 'No customers found'}
+            {loading ? t('customer.loadingCustomers') : t('customer.noCustomers')}
           </Text>
         }
       />
@@ -148,42 +236,114 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    padding: 16,
-    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+    gap: 10,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  titleText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textPrimary as string,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 12,
+    height: 44,
   },
   searchInput: {
-    marginBottom: 8,
+    flex: 1,
+    fontSize: 15,
   },
+
+  totalInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  totalInlineText: {
+    color: colors.textSecondary as string,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  totalInlineBadge: {
+    backgroundColor: '#eef2f7',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  totalInlineBadgeText: { color: colors.textPrimary as string, fontWeight: '700' },
   listContainer: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 8,
   },
   customerItem: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    position: 'relative',
+  },
+  cardAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
   },
   customerInfo: {
     gap: 4,
+    paddingLeft: 8,
+    flexShrink: 1,
+  },
+  customerField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  fieldIcon: {
+    marginRight: 4,
   },
   customerName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+    color: colors.textPrimary as string,
   },
   customerContact: {
     fontSize: 14,
-    color: '#666',
+    color: '#64748b',
+    marginTop: 2,
   },
   customerAddress: {
     fontSize: 14,
-    color: '#666',
+    color: '#6b7280',
   },
   customerDate: {
     fontSize: 12,
-    color: '#999',
+    color: '#9ca3af',
     marginTop: 4,
   },
   emptyText: {
@@ -195,13 +355,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#10b981',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 8,
     marginLeft: 12,
   },
   orderButtonText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  deleteIconBtn: {
+    marginLeft: 8,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#fef2f2',
+    borderWidth: 1,
+    borderColor: '#fecaca',
   },
 });
 

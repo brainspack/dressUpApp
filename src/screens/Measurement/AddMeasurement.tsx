@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Image } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainTabParamList } from '../../navigation/types';
@@ -21,6 +21,10 @@ interface MeasurementForm {
   hips?: string;
   shoulder?: string;
   sleeve?: string;
+  bicep?: string;
+  wrist?: string;
+  inseam?: string;
+  outseam?: string;
   // Women's measurements
   bust?: string;
   naturalWaist?: string;
@@ -35,12 +39,36 @@ const AddMeasurement = () => {
   const navigation = useNavigation<AddMeasurementScreenNavigationProp>();
   const route = useRoute();
   const [type, setType] = useState<MeasurementType>('men');
+  const [selectedMeasurementField, setSelectedMeasurementField] = useState('height');
   const [form, setForm] = useState<MeasurementForm>({
     type: 'men',
     height: '',
     weight: '',
   });
   const [loading, setLoading] = useState(false);
+
+  // Measurement key -> image mapping
+  const measurementImages: Record<string, any> = {
+    height: require('../../assets/height.png'),
+    chest: require('../../assets/chest.png'),
+    waist: require('../../assets/waist.png'),
+    hips: require('../../assets/hip.webp'),
+    shoulder: require('../../assets/shoulder.png'),
+    sleeve: require('../../assets/sleeve_lenght.webp'),
+    bust: require('../../assets/chest.png'), // Using chest image for bust
+    naturalWaist: require('../../assets/waist.png'),
+    lowWaist: require('../../assets/waist.png'),
+    bicep: require('../../assets/bicep.webp'),
+    armhole: require('../../assets/arm_hole.webp'),
+    neck: require('../../assets/neck.webp'),
+    thigh: require('../../assets/thigh.webp'),
+    knee: require('../../assets/knee.webp'),
+    calf: require('../../assets/calf.webp'),
+    ankle: require('../../assets/ankle_length.webp'),
+    inseam: require('../../assets/inseam_.webp'),
+    outseam: require('../../assets/outseam.webp'),
+    wrist: require('../../assets/arm_wrist.webp'),
+  };
 
   const validateForm = () => {
     if (!form.height.trim()) {
@@ -92,30 +120,63 @@ const AddMeasurement = () => {
               value={form.chest}
               onChangeText={(text) => setForm({ ...form, chest: text })}
               keyboardType="numeric"
+              onFocus={() => setSelectedMeasurementField('chest')}
             />
             <Input
               label="Waist (cm)"
               value={form.waist}
               onChangeText={(text) => setForm({ ...form, waist: text })}
               keyboardType="numeric"
+              onFocus={() => setSelectedMeasurementField('waist')}
             />
             <Input
               label="Hips (cm)"
               value={form.hips}
               onChangeText={(text) => setForm({ ...form, hips: text })}
               keyboardType="numeric"
+              onFocus={() => setSelectedMeasurementField('hips')}
             />
             <Input
               label="Shoulder (cm)"
               value={form.shoulder}
               onChangeText={(text) => setForm({ ...form, shoulder: text })}
               keyboardType="numeric"
+              onFocus={() => setSelectedMeasurementField('shoulder')}
             />
             <Input
               label="Sleeve (cm)"
               value={form.sleeve}
               onChangeText={(text) => setForm({ ...form, sleeve: text })}
               keyboardType="numeric"
+              onFocus={() => setSelectedMeasurementField('sleeve')}
+            />
+            <Input
+              label="Bicep (cm)"
+              value={form.bicep}
+              onChangeText={(text) => setForm({ ...form, bicep: text })}
+              keyboardType="numeric"
+              onFocus={() => setSelectedMeasurementField('bicep')}
+            />
+            <Input
+              label="Wrist (cm)"
+              value={form.wrist}
+              onChangeText={(text) => setForm({ ...form, wrist: text })}
+              keyboardType="numeric"
+              onFocus={() => setSelectedMeasurementField('wrist')}
+            />
+            <Input
+              label="Inseam (cm)"
+              value={form.inseam}
+              onChangeText={(text) => setForm({ ...form, inseam: text })}
+              keyboardType="numeric"
+              onFocus={() => setSelectedMeasurementField('inseam')}
+            />
+            <Input
+              label="Outseam (cm)"
+              value={form.outseam}
+              onChangeText={(text) => setForm({ ...form, outseam: text })}
+              keyboardType="numeric"
+              onFocus={() => setSelectedMeasurementField('outseam')}
             />
           </>
         );
@@ -127,24 +188,28 @@ const AddMeasurement = () => {
               value={form.bust}
               onChangeText={(text) => setForm({ ...form, bust: text })}
               keyboardType="numeric"
+              onFocus={() => setSelectedMeasurementField('bust')}
             />
             <Input
               label="Natural Waist (cm)"
               value={form.naturalWaist}
               onChangeText={(text) => setForm({ ...form, naturalWaist: text })}
               keyboardType="numeric"
+              onFocus={() => setSelectedMeasurementField('naturalWaist')}
             />
             <Input
               label="Low Waist (cm)"
               value={form.lowWaist}
               onChangeText={(text) => setForm({ ...form, lowWaist: text })}
               keyboardType="numeric"
+              onFocus={() => setSelectedMeasurementField('lowWaist')}
             />
             <Input
               label="Hips (cm)"
               value={form.hips}
               onChangeText={(text) => setForm({ ...form, hips: text })}
               keyboardType="numeric"
+              onFocus={() => setSelectedMeasurementField('hips')}
             />
           </>
         );
@@ -171,6 +236,15 @@ const AddMeasurement = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.form}>
+        {/* Measurement Image Preview */}
+        <View style={styles.imageContainer}>
+          <Image
+            source={measurementImages[selectedMeasurementField] || measurementImages.chest}
+            style={styles.measurementImage}
+            resizeMode="contain"
+          />
+        </View>
+
         <View style={styles.typeSelector}>
           <Button
             title="Men"
@@ -194,6 +268,7 @@ const AddMeasurement = () => {
           value={form.height}
           onChangeText={(text) => setForm({ ...form, height: text })}
           keyboardType="numeric"
+          onFocus={() => setSelectedMeasurementField('height')}
         />
         <Input
           label="Weight (kg)"
@@ -238,6 +313,14 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: 8,
+  },
+  imageContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  measurementImage: {
+    width: '100%',
+    height: 200,
   },
 });
 
