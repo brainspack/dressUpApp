@@ -11,7 +11,7 @@
  * Data is fetched from backend API for customer details.
  */
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, TextInput } from 'react-native';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { OrderStackParamList } from '../../navigation/types';
@@ -48,6 +48,7 @@ const OrderSummary = () => {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [localSelectedOutfits, setLocalSelectedOutfits] = useState(route.params?.selectedOutfits || []);
+  const [advance, setAdvance] = useState<string>('0');
 
   const { customerId, shopId, customerName, selectedOutfits: routeOutfits } = route.params;
 
@@ -73,21 +74,28 @@ const OrderSummary = () => {
       const lastPrice = await AsyncStorage.getItem('lastCalculatedPrice');
       const lastOutfitId = await AsyncStorage.getItem('lastOutfitId');
       const lastMeasurements = await AsyncStorage.getItem('lastMeasurements');
+      const lastBreakdownRaw = await AsyncStorage.getItem('lastBreakdown');
+      let lastBreakdown: any = null;
+      try { lastBreakdown = lastBreakdownRaw ? JSON.parse(lastBreakdownRaw) : null; } catch {}
       
       if ((lastPrice || lastMeasurements) && lastOutfitId) {
-        // Update the outfit with the calculated price
-        const updatedOutfits = localSelectedOutfits.map(outfit => 
-          outfit.id === lastOutfitId 
-            ? { ...outfit, price: lastPrice ? parseFloat(lastPrice) : (outfit.price || 0) }
+        // Update the outfit with the calculated price using functional updater
+        const numericPrice = lastPrice ? parseFloat(lastPrice) : undefined;
+        setLocalSelectedOutfits(prev => prev.map(outfit => (
+          outfit.id === lastOutfitId
+            ? { ...outfit, price: numericPrice !== undefined ? numericPrice : (outfit.price || 0),
+                _itemsTotal: lastBreakdown?.itemsTotal,
+                _clothTotal: lastBreakdown?.clothTotal,
+                _notesText: lastBreakdown?.notesText,
+                _orderType: lastBreakdown?.orderType,
+              }
             : outfit
-        );
-        
-        // Update the local state
-        setLocalSelectedOutfits(updatedOutfits);
+        )));
         
         // Clear the stored data
         await AsyncStorage.removeItem('lastCalculatedPrice');
         await AsyncStorage.removeItem('lastOutfitId');
+        await AsyncStorage.removeItem('lastBreakdown');
         if (lastMeasurements) {
           await AsyncStorage.setItem(`ms_${lastOutfitId}`, lastMeasurements);
           await AsyncStorage.removeItem('lastMeasurements');
@@ -174,6 +182,17 @@ const OrderSummary = () => {
         const defaultDeliveryDate = new Date();
         defaultDeliveryDate.setDate(defaultDeliveryDate.getDate() + 7);
         
+        const isAlteration = ((outfit as any)._orderType === 'alteration');
+        const itemsTotal = (outfit as any)._itemsTotal != null ? Number((outfit as any)._itemsTotal) : (outfit.price || 0);
+        const clothTotal = (outfit as any)._clothTotal != null ? Number((outfit as any)._clothTotal) : 0;
+        const priceToSend = isAlteration ? clothTotal : itemsTotal;
+        const materialToSend = isAlteration ? 0 : clothTotal;
+
+        // Apply advance proportionally only to the first outfit for now
+        let adv = parseFloat(advance || '0') || 0;
+        const appliedDiscount = Math.min(adv, priceToSend + materialToSend);
+        const discountedTotal = Math.max(0, (priceToSend + materialToSend) - appliedDiscount);
+
         const payload = {
           customerId: customerIdToUse!,
           shopId: shopId,
@@ -182,24 +201,30 @@ const OrderSummary = () => {
           deliveryDate: defaultDeliveryDate.toISOString(),
           tailorName: null,
           tailorNumber: null,
+          // Ensure backend stores correct order type
+          orderType: (isAlteration ? 'ALTERATION' : 'STITCHING'),
+          // Send separate price vs materialCost so details page shows both correctly
           clothes: [{
             type: outfit.type,
             color: '',
             fabric: '',
-            materialCost: outfit.price || 0,
-            price: outfit.price || 0,
+            materialCost: isAlteration ? 0 : materialToSend,
+            price: isAlteration ? discountedTotal : Math.max(0, (priceToSend + materialToSend) - appliedDiscount) - materialToSend,
             designNotes: '',
             imageUrls: [],
             videoUrls: [],
           }],
+          alterationPrice: isAlteration ? Math.max(0, priceToSend - appliedDiscount) : undefined,
           notes: JSON.stringify({ 
-            notes: '', 
+            notes: (outfit as any)._notesText || '', 
             clothes: [{
               type: outfit.type,
-              price: outfit.price || 0,
-              orderType: 'stitching' // Default to stitching
+              price: isAlteration ? Math.max(0, priceToSend - appliedDiscount) : Math.max(0, (priceToSend + materialToSend) - appliedDiscount) - materialToSend,
+              materialCost: isAlteration ? 0 : materialToSend,
+              orderType: (isAlteration ? 'alteration' : 'stitching')
             }],
-            orderType: 'stitching' // Default to stitching
+            orderType: (isAlteration ? 'alteration' : 'stitching'),
+            advanceApplied: appliedDiscount,
           }),
         };
 
@@ -288,22 +313,13 @@ const OrderSummary = () => {
           {
             text: 'Stitching',
             onPress: () => {
-              console.log('Navigating to AddOrder with params:', {
-                customerId,
-                shopId,
-                customerName: customer?.name || customerName,
-                outfitType: localSelectedOutfits[0]?.type,
-                gender: localSelectedOutfits[0]?.gender,
-                orderType: 'stitching'
-              });
-              
               navigation.navigate('AddOrder', {
                 customerId,
                 shopId,
                 customerName: customer?.name || customerName,
                 outfitType: localSelectedOutfits[0]?.type,
                 gender: localSelectedOutfits[0]?.gender,
-                outfitId: localSelectedOutfits[0]?.id || '',
+                outfitId: localSelectedOutfits[0]?.id || `${localSelectedOutfits[0]?.type || 'ot'}-0`,
                 orderType: 'stitching'
               });
             }
@@ -311,15 +327,6 @@ const OrderSummary = () => {
           {
             text: 'Alteration',
             onPress: () => {
-              console.log('Navigating to AddOrder with params:', {
-                customerId,
-                shopId,
-                customerName: customer?.name || customerName,
-                outfitType: localSelectedOutfits[0]?.type,
-                gender: localSelectedOutfits[0]?.gender,
-                orderType: 'alteration'
-              });
-              
               // 🚀 FIXED: Direct navigation to AddOrder for alteration (no modal)
               navigation.navigate('AddOrder', {
                 customerId,
@@ -327,7 +334,7 @@ const OrderSummary = () => {
                 customerName: customer?.name || customerName,
                 outfitType: localSelectedOutfits[0]?.type,
                 gender: localSelectedOutfits[0]?.gender,
-                outfitId: localSelectedOutfits[0]?.id || '',
+                outfitId: localSelectedOutfits[0]?.id || `${localSelectedOutfits[0]?.type || 'ot'}-0`,
                 orderType: 'alteration'
               });
             }
@@ -354,8 +361,7 @@ const OrderSummary = () => {
           text: 'Remove', 
           style: 'destructive',
           onPress: () => {
-            // Navigate back to outfit selection
-            navigation.goBack();
+            setLocalSelectedOutfits(prev => prev.filter(o => o.id !== outfitId));
           }
         }
       ]
@@ -420,67 +426,39 @@ const OrderSummary = () => {
           </View>
         </View>
 
-        {/* Selected Outfits */}
+        {/* Selected Outfits - horizontal chips */}
         <View style={styles.outfitsSection}>
           <TitleText style={styles.sectionTitle}>Selected Outfits</TitleText>
           {localSelectedOutfits && localSelectedOutfits.length > 0 ? (
-            localSelectedOutfits.map((outfit) => {
-              return (
-                <View key={outfit.id} style={styles.outfitCard}>
-                  <View style={styles.outfitInfo}>
-                    <View style={styles.outfitIconContainer}>
-                      {typeof outfit.image === 'string' ? (
-                        // Show outfit name as text with a nice icon background
-                        <View style={[styles.outfitIcon, { backgroundColor: colors.brand, justifyContent: 'center', alignItems: 'center' }]}>
-                          <Icon name="checkroom" size={20} color={colors.white} />
-                        </View>
-                      ) : outfit.image ? (
-                        <Image 
-                          source={outfit.image} 
-                          style={styles.outfitIcon} 
-                          resizeMode="contain"
-                          onError={(error) => console.log('Image error:', error)}
-                        />
-                      ) : (
-                        <View style={[styles.outfitIcon, { backgroundColor: colors.gray100, justifyContent: 'center', alignItems: 'center' }]}>
-                          <Icon name="image" size={20} color={colors.gray400} />
-                        </View>
-                      )}
-                    </View>
-                    <TitleText style={styles.outfitName}>{outfit.name}</TitleText>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {localSelectedOutfits.map((outfit) => (
+                <View key={outfit.id} style={styles.outfitChip}>
+                  <View style={styles.outfitChipIconWrap}>
+                    {outfit.image ? (
+                      <Image source={outfit.image} style={styles.outfitChipIcon} />
+                    ) : (
+                      <Icon name="checkroom" size={16} color={colors.white} />
+                    )}
                   </View>
-                  <View style={styles.outfitActions}>
-                    <TouchableOpacity 
-                      style={styles.addButton}
-                      onPress={() => {
-                        navigation.navigate('AddOrder', {
-                          customerId,
-                          shopId,
-                          customerName: customer?.name || customerName,
-                          outfitType: outfit.type,
-                          gender: outfit.gender,
-                          outfitId: outfit.id,
-                          outfitPrice: 0 // No default price - user will set price in AddOrder form
-                        });
-                      }}
-                    >
-                      <LinearGradient
-                        colors={['#229B73', '#1a8f6e', '#000000']}
-                        style={styles.addButtonGradient}
-                      >
-                        <Icon name="add" size={20} color={colors.white} />
-                      </LinearGradient>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.removeButton}
-                      onPress={() => handleRemoveOutfit(outfit.id)}
-                    >
-                      <Icon name="delete" size={20} color="#ef4444" />
-                    </TouchableOpacity>
-                  </View>
+                  <TitleText numberOfLines={1} style={styles.outfitChipText}>{outfit.name}</TitleText>
+                  <TouchableOpacity
+                    style={styles.outfitChipAdd}
+                    onPress={() => {
+                      navigation.navigate('AddOrder', {
+                        customerId,
+                        shopId,
+                        customerName: customer?.name || customerName,
+                        outfitType: outfit.type,
+                        gender: outfit.gender,
+                        outfitId: outfit.id,
+                      });
+                    }}
+                  >
+                    <Icon name="add" size={18} color={colors.white} />
+                  </TouchableOpacity>
                 </View>
-              );
-            })
+              ))}
+            </ScrollView>
           ) : (
             <View style={styles.outfitCard}>
               <RegularText style={styles.outfitName}>No outfits selected</RegularText>
@@ -513,13 +491,26 @@ const OrderSummary = () => {
           <View style={styles.totalRow}>
             <TitleText style={styles.totalLabel}>Total:</TitleText>
             <TitleText style={styles.totalAmount}>
-              ₹{localSelectedOutfits.reduce((total, outfit) => total + (outfit.price || 0), 0).toFixed(2)}
+              {(() => {
+                const gross = localSelectedOutfits.reduce((total, outfit) => total + (outfit.price || 0), 0);
+                const adv = parseFloat(advance || '0') || 0;
+                return `₹${Math.max(0, gross - adv).toFixed(2)}`;
+              })()}
             </TitleText>
           </View>
           <View style={styles.discountInput}>
-            <RegularText style={styles.discountLabel}>Discount:</RegularText>
+            <RegularText style={styles.discountLabel}>Advance:</RegularText>
             <View style={styles.discountField}>
-              <RegularText style={styles.discountValue}>0.0</RegularText>
+              <View style={styles.advanceRow}>
+                <Icon name="currency-rupee" size={16} color={colors.textSecondary} />
+                <TextInput
+                  style={styles.advanceInput}
+                  value={advance}
+                  onChangeText={(text) => setAdvance((text || '').replace(/[^0-9.]/g, ''))}
+                  placeholder="0.0"
+                  keyboardType="numeric"
+                />
+              </View>
             </View>
           </View>
         </View>
@@ -532,7 +523,7 @@ const OrderSummary = () => {
           title="Create Order"
           height={56}
           gradientColors={['#229B73', '#1a8f6e', '#000000']}
-          onPress={handleSubmit}
+          onPress={() => handleSubmit()}
           style={{ borderRadius: 12 }}
         />
       </View>
@@ -619,6 +610,46 @@ const styles = StyleSheet.create({
   outfitsSection: {
     marginHorizontal: 16,
     marginBottom: 16,
+  },
+  outfitChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 24,
+    marginRight: 8,
+  },
+  outfitChipIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+    overflow: 'hidden',
+  },
+  outfitChipIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
+  outfitChipText: {
+    maxWidth: 110,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  outfitChipAdd: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
   },
   sectionTitle: {
     fontSize: 16,
@@ -774,6 +805,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textPrimary,
     fontWeight: '600',
+  },
+  advanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  advanceInput: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.textPrimary,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
   },
   bottomContainer: {
     padding: 16,

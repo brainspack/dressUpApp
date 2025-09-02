@@ -46,6 +46,7 @@ export type OrderStackParamList = {
     customerId?: string;
     shopId?: string;
     customerName?: string;
+    orderType?: 'stitching' | 'alteration';
     existingOutfits?: Array<{
       id: string;
       name: string;

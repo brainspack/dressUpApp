@@ -30,6 +30,32 @@ type OutfitSelectionScreenRouteProp = RouteProp<
   'OutfitSelection'
 >;
 
+// Human-friendly labels for outfit names
+const formatOutfitLabel = (raw: string): string => {
+  const map: Record<string, string> = {
+    'ethnic_jacket': 'Ethnic Jacket',
+    'women_western_suit': 'Women Western Suit',
+    'women_co_ord_set': 'Women Co-ord Set',
+    'co_ord_set': 'Co-ord Set',
+    'womenssuit': 'Women Suit',
+    'saree+blouse': 'Saree + Blouse',
+    'indo_western': 'Indo Western',
+    'kurta_pajama': 'Kurta Pajama',
+    'women_blazer': 'Women Blazer',
+    'waistcost': 'Waistcoat',
+    'nehrujacket': 'Nehru Jacket',
+    'tshirt': 'T-Shirt',
+  };
+  const withoutCount = (raw || '').replace(/\s*\(\d+\)\s*$/, ''); // e.g., "shirt (1)" -> "shirt"
+  if (map[withoutCount]) return map[withoutCount];
+  const withSpaces = withoutCount.replace(/_/g, ' ').replace(/\s{2,}/g, ' ').trim();
+  const normalized = withSpaces.replace(/\bco ord set\b/i, 'Co-ord Set');
+  return normalized
+    .split(' ')
+    .map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : '')
+    .join(' ');
+};
+
 // Custom SVG Icons for each outfit type
 const OutfitIcons = {
   // Traditional Indian Wear - Female
@@ -282,8 +308,8 @@ const getFemaleOutfits = (): OutfitType[] => [
   { id: 'f21', name: 'gown', gender: 'female', category: 'Western Wear', icon: OutfitIcons.gown },
   { id: 'f22', name: 'saree+blouse', gender: 'female', category: 'Traditional Wear', icon: OutfitIcons.sareeBlouse },
   { id: 'f23', name: 'dress', gender: 'female', category: 'Western Wear', icon: OutfitIcons.dress },
-  { id: 'f24', name: 'co_ord_set', gender: 'female', category: 'Western Wear', icon: OutfitIcons.coOrdSet },
-  { id: 'f25', name: 'tshirt', gender: 'female', category: 'Western Wear', icon: OutfitIcons.tshirt },
+  
+  { id: 'f24', name: 'tshirt', gender: 'female', category: 'Western Wear', icon: OutfitIcons.tshirt },
 ];
 
 const getMaleOutfits = (): OutfitType[] => [
@@ -295,7 +321,7 @@ const getMaleOutfits = (): OutfitType[] => [
   { id: 'm6', name: 'sherwani', gender: 'male', category: 'Traditional Wear', icon: OutfitIcons.sherwani },
   { id: 'm7', name: 'waistcost', gender: 'male', category: 'Traditional Wear', icon: OutfitIcons.waistcost },
   { id: 'm8', name: 'nehrujacket', gender: 'male', category: 'Traditional Wear', icon: OutfitIcons.nehrujacket },
- 
+  { id: 'm9', name: 'co_ord_set', gender: 'male', category: 'Western Wear', icon: OutfitIcons.coOrdSet },
   { id: 'm10', name: 'pants', gender: 'male', category: 'Western/Formal Wear', icon: OutfitIcons.pants },
   { id: 'm11', name: 'kurta_pajama', gender: 'male', category: 'Traditional Wear', icon: OutfitIcons.kurtaPajama },
 ];
@@ -372,10 +398,10 @@ const OutfitSelectionScreen = () => {
       console.log('Existing outfits:', route.params?.existingOutfits);
 
       // Get existing outfits or start with empty array
-      const existingOutfits = route.params?.existingOutfits || [];
+      const existingOutfitsList = route.params?.existingOutfits || [];
       
       // Check if outfit is already selected
-      const isAlreadySelected = existingOutfits.some(existing => existing.name === outfit.name);
+      const isAlreadySelected = existingOutfitsList.some(existing => existing.name === outfit.name);
       
       if (isAlreadySelected) {
         Alert.alert(
@@ -385,25 +411,20 @@ const OutfitSelectionScreen = () => {
         );
         return;
       }
-
-    // Go to AddOrder form to enter price, then return with totals
-      navigation.navigate('AddOrder', {
+      const newChip = {
+        id: outfit.id || `${outfit.name}-${Date.now()}`,
+        name: outfit.name,
+        type: outfit.name,
+        image: getOutfitImageSource(outfit.name),
+        gender: outfit.gender,
+        _orderType: selectedGender === 'female' || selectedGender === 'male' ? (route.params?.orderType || 'stitching') : (route.params?.orderType || 'stitching'),
+      } as any;
+      const combined = [...existingOutfitsList, newChip];
+      navigation.navigate('OrderSummary', {
         customerId: route.params?.customerId || '',
         shopId: route.params?.shopId || '',
         customerName: customerNameInput,
-        outfitId: outfit.id || 'new',
-        outfitType: outfit.name,
-        gender: outfit.gender,
-        onAddComplete: (data: any) => {
-          const newOutfits = [
-            ...selectedOutfits,
-            ...data.items.map((item: any) => ({ name: item.name, price: (Number(item.price)||0) * (Number(item.quantity)||1) })),
-            ...data.clothes.map((cloth: any) => ({ name: cloth.type, price: Number(cloth.materialCost)||0 }))
-          ];
-          setSelectedOutfits(newOutfits);
-          const total = newOutfits.reduce((sum, o) => sum + (Number(o.price)||0), 0);
-          setTotalFromForms(total);
-        }
+        selectedOutfits: combined,
       });
       
     } catch (error) {
@@ -454,8 +475,8 @@ const OutfitSelectionScreen = () => {
       kurta_pajama: require('../../assets/kurta_pajama.png'),
       shirt: require('../../assets/shirt.jpg')
     };
-    
-    const imageSource = outfitImageMap[outfitName];
+    const key = (outfitName || '').replace(/\s*\(\d+\)\s*$/, '');
+    const imageSource = outfitImageMap[key];
     if (imageSource) {
       console.log(`Found image for ${outfitName}:`, imageSource);
       return imageSource;
@@ -492,7 +513,7 @@ const OutfitSelectionScreen = () => {
           numberOfLines={1}
           ellipsizeMode="tail"
         >
-          {item.name}
+          {formatOutfitLabel(item.name)}
         </RegularText>
       </TouchableOpacity>
     );

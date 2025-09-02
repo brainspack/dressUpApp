@@ -29,6 +29,7 @@ export interface ClothItem {
   color?: string | null;
   fabric?: string | null;
   materialCost?: number | null;
+  price?: number | null;
   designNotes?: string | null;
   imageUrls: string[];
   imageData?: string[]; // Store base64 strings instead of Buffer
@@ -46,6 +47,7 @@ export interface Order {
   status: OrderStatus;
   orderType?: 'STITCHING' | 'ALTERATION'; // 🚀 Add orderType field
   alterationPrice?: number; // 🚀 Add alterationPrice field
+  totalAmount?: number | null; // Optional backend-calculated total
   timeline?: TimelineEvent[];
   notes?: string;
   createdAt: string;

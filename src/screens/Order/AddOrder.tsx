@@ -217,6 +217,55 @@ const AddOrder = () => {
     const baseMeasurements = ['height', 'chest', 'waist', 'shoulder'];
     
     switch (outfitType.toLowerCase()) {
+      // Quick aliases / normalizations
+      case 'pajama':
+      case 'pajamas':
+      case 'pants':
+      case 'pant':
+      case 'trouser':
+      case 'trousers':
+        // Bottom wear: prefer lower-body measurements
+        return ['waist', 'hip', 'inseam', 'outseam', 'thigh', 'knee', 'calf', 'ankle'];
+
+      case 'kurti':
+      case 'top':
+      case 'tshirt':
+      case 'shirt':
+      case 'formal shirt':
+      case 'casual shirt':
+        // Upper garments
+        return ['height', 'chest', 'waist', 'shoulder', 'armhole', 'sleeveLength', 'neck', 'bicep', 'wrist'];
+
+      case 'skirt':
+        // Skirt-like bottom
+        return ['waist', 'hip', 'outseam'];
+
+      case 'jacket':
+      case 'blazer':
+      case 'women_blazer':
+      case 'ethnic_jacket':
+      case 'indo_western':
+        return ['height', 'chest', 'waist', 'shoulder', 'armhole', 'sleeveLength', 'neck', 'bicep', 'wrist'];
+
+      case 'lehenga':
+      case 'sharara':
+      case 'underskirt':
+        return ['waist', 'hip', 'outseam'];
+
+      case 'gown':
+      case 'dress':
+        return ['height', 'chest', 'waist', 'hip', 'shoulder', 'armhole', 'sleeveLength', 'neck'];
+
+      case 'camisole':
+      case 'nighty':
+        return ['height', 'chest', 'waist', 'hip'];
+
+      case 'kurta':
+        return ['height', 'chest', 'waist', 'hip', 'shoulder', 'armhole', 'sleeveLength', 'neck'];
+
+      case 'kurta pajama':
+        return ['height', 'chest', 'waist', 'hip', 'shoulder', 'armhole', 'sleeveLength', 'neck', 'inseam', 'outseam', 'thigh', 'knee', 'calf', 'ankle'];
+
       // Female Traditional Wear
       case 'salwar kameez':
       case 'churidar suit':
@@ -603,11 +652,40 @@ const AddOrder = () => {
     });
   };
 
+  // Save details locally and go back to summary without creating an order
+  const handleSaveAndBack = async () => {
+    try {
+      // Compute totals
+      const itemsTotal = formData.items.reduce((total, item) => total + (item.price * item.quantity), 0);
+      const materialSum = formData.clothes.reduce((total, cloth) => total + cloth.materialCost, 0);
+      const alterationVal = formData.orderType === 'alteration' && formData.alterationPrice
+        ? parseFloat(formData.alterationPrice)
+        : 0;
+      // For stitching: clothTotal = materialSum; For alteration: clothTotal = alterationVal
+      const clothesTotal = formData.orderType === 'alteration' ? alterationVal : materialSum;
+      const totalAmount = itemsTotal + clothesTotal;
+
+      // Persist values for OrderSummary to pick up
+      const lastOutfitId = (route.params as any)?.outfitId || `${route.params?.outfitType || 'ot'}-${Date.now()}`;
+      const measurementsArray = Object.values(formData.measurements || {});
+      await AsyncStorage.multiSet([
+        ['lastCalculatedPrice', String(totalAmount)],
+        ['lastOutfitId', String(lastOutfitId)],
+        ['lastMeasurements', JSON.stringify(measurementsArray)],
+      ]);
+      // Store detailed breakdown to let summary create correct price/materialCost
+      const breakdown = { id: String(lastOutfitId), itemsTotal, clothTotal: clothesTotal, notesText: formData.notes || '', orderType: formData.orderType };
+      await AsyncStorage.setItem('lastBreakdown', JSON.stringify(breakdown));
+
+      // Return to summary
+      (navigation as any).goBack();
+    } catch (error) {
+      console.error('Failed to save details:', error);
+      Alert.alert('Error', 'Failed to save details.');
+    }
+  };
+
   const handleSubmit = async () => {
-    // 🚀 IMMEDIATE LOG TO CHECK IF FUNCTION IS CALLED
-    console.log('🔴🔴🔴 handleSubmit CALLED 🔴🔴🔴');
-    Alert.alert('Debug', 'handleSubmit called!');
-    
     try {
       // 🚀 ENHANCED SHOPID VALIDATION
       console.log('[AddOrder] handleSubmit called with resolvedShopId:', resolvedShopId);
@@ -1175,7 +1253,7 @@ const AddOrder = () => {
 
           <TouchableOpacity
             style={styles.createOrderButton}
-            onPress={handleSubmit} // 🚀 FIXED: Call handleSubmit to create order
+            onPress={handleSaveAndBack}
             activeOpacity={0.8}
           >
             <LinearGradient
@@ -1184,7 +1262,7 @@ const AddOrder = () => {
               end={{ x: 1, y: 0 }}
               style={styles.createOrderButtonGradient}
             >
-              <Text style={styles.createOrderButtonText}>Create Order</Text>
+              <Text style={styles.createOrderButtonText}>Save Details</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>

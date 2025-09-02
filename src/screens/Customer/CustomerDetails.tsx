@@ -18,6 +18,7 @@ interface Customer {
   serialNumber?: number;
   name: string;
   mobileNumber: string;
+  shopId?: string;
   address?: string;
   createdAt: string;
 }
@@ -198,11 +199,29 @@ const CustomerDetails = () => {
           variant="light"
           title="Create Order"
           height={56}
-          onPress={() => navigation.navigate('OutfitSelection', { 
-            customerId: customer.id,
-            shopId: customer.shopId,
-            customerName: customer.name
-          })}
+          onPress={() => {
+            const root = (navigation as any).getParent?.();
+            if (root) {
+              root.navigate('Orders', {
+                screen: 'OutfitSelection',
+                params: {
+                  customerId: customer.id,
+                  shopId: customer.shopId,
+                  customerName: customer.name,
+                },
+              });
+            } else {
+              // Fallback: try navigating relative to current nav if parent is unavailable
+              (navigation as any).navigate('Orders', {
+                screen: 'OutfitSelection',
+                params: {
+                  customerId: customer.id,
+                  shopId: customer.shopId,
+                  customerName: customer.name,
+                },
+              });
+            }
+          }}
           style={{ borderRadius: 12 }}
         />
       </View>

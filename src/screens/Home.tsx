@@ -22,7 +22,7 @@ const Home = () => {
   const { width } = Dimensions.get('window');
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const { t } = useTranslation();
-  const { accessToken, isAuthenticated } = useAuth();
+  const { accessToken, isAuthenticated, userInfo: ctxUser } = useAuth();
   const [shopStats, setShopStats] = useState<any>(null);
   const [userInfo, setUserInfo] = useState<any>(null);
   const [currentShopId, setCurrentShopId] = useState<string | null>(null);
@@ -72,7 +72,7 @@ const Home = () => {
     return () => clearInterval(timerId);
   }, [slides.length, snapWidth]);
 
-  const displayName = (userInfo?.name as string) || 'User';
+  const displayName = (ctxUser?.name as string) || (userInfo?.name as string) || 'User';
   const userInitial = displayName?.trim()?.charAt(0)?.toUpperCase?.() || 'U';
 
   const getISTGreeting = (): string => {
@@ -666,9 +666,7 @@ const Home = () => {
             {/* User Welcome */}
             <View style={styles.userWelcomeSection}>
               <TitleText style={styles.welcomeText}>Welcome</TitleText>
-              <TitleText style={styles.userNameText}>
-                {userInfo?.name || 'User'}
-              </TitleText>
+              <TitleText style={styles.userNameText}>{displayName}</TitleText>
             </View>
 
             {/* Image Carousel (wide, short height) */}

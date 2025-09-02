@@ -291,15 +291,20 @@ const OrderList = () => {
   };
 
   const getDisplayItems = (order: OrderApi): OrderItemLite[] => {
+    // Prefer explicit items if present
     if (order.items && order.items.length > 0) return order.items;
+
+    // Try to parse from notes first
     const fromNotes = parseNotesItems(order);
     if (fromNotes.length > 0) return fromNotes;
+
+    // Fallback to clothes; prefer price field if present, else materialCost
     if (order.clothes && order.clothes.length > 0) {
       return order.clothes.map((c, idx) => ({
         id: c.id || String(idx),
         name: c.type || 'Item',
         quantity: 1,
-        price: Number(c.materialCost) || 0,
+        price: (typeof c.price === 'number' && !isNaN(c.price) ? Number(c.price) : Number(c.materialCost) || 0),
       }));
     }
     return [];
@@ -510,10 +515,13 @@ const OrderList = () => {
                   {t('order.order')} #ORD-{String(item.serialNumber).padStart(4, '0')}
                 </RegularText>
               </View>
+              <View style={[styles.typeBadge, item.orderType === 'ALTERATION' ? styles.typeAlteration : styles.typeStitching]}>
+                <RegularText style={styles.typeText}>{item.orderType === 'ALTERATION' ? 'Alteration' : 'Stitching'}</RegularText>
+              </View>
                 <View style={[styles.statusBadge, { 
                   backgroundColor: getStatusColor(item.status)
-                }]}>
-                  <RegularText style={[styles.statusText, { color: getStatusTextColor(item.status) }]}>
+                }] }>
+                  <RegularText style={[styles.statusText, { color: getStatusTextColor(item.status) }] }>
                     {formatStatus(item.status)}
                   </RegularText>
                 </View>
@@ -546,7 +554,7 @@ const OrderList = () => {
                   <View key={(orderItem.id as string) || orderItem.name} style={styles.itemRow}>
                     <View style={styles.itemDot} />
                     <RegularText style={styles.itemText}>
-                      {orderItem.name} x {orderItem.quantity} - ₹{orderItem.price}
+                      {(item.orderType === 'ALTERATION' ? 'Alteration: ' : '')}{orderItem.name} x {orderItem.quantity} - ₹{orderItem.price}
                     </RegularText>
                   </View>
                 ))}
@@ -1075,15 +1083,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  orderIdContainer: {
-    flexDirection: 'row',
-    // alignItems: 'center',
-    alignItems: 'center',
-  justifyContent: 'space-between',
-    gap: 6,
-  },
   orderIcon: {
     marginRight: 4,
+  },
+  typeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  typeText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  typeStitching: {
+    backgroundColor: '#10B981',
+  },
+  typeAlteration: {
+    backgroundColor: '#F59E0B',
   },
 
   bottomSheetBackdrop: {

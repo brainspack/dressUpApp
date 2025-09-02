@@ -291,9 +291,20 @@ const OrderDetails = () => {
       }
       
       console.log('Parsed notes:', notesObj);
-      if (notesObj && typeof notesObj === 'object' && notesObj.items && Array.isArray(notesObj.items)) {
-        itemsFromNotes = notesObj.items;
-        console.log('Items with prices from notes:', itemsFromNotes);
+      if (notesObj && typeof notesObj === 'object') {
+        if (Array.isArray(notesObj.items)) {
+          itemsFromNotes = notesObj.items;
+          console.log('Items with prices from notes.items:', itemsFromNotes);
+        } else if (Array.isArray(notesObj.clothes)) {
+          // Fallback: build items from notes.clothes using their price
+          itemsFromNotes = notesObj.clothes.map((c: any, idx: number) => ({
+            id: String(c.id || idx),
+            name: c.type,
+            quantity: 1,
+            price: Number(c.price) || 0,
+          }));
+          console.log('Items with prices from notes.clothes:', itemsFromNotes);
+        }
       }
     }
   } catch (e) {
@@ -307,10 +318,13 @@ const OrderDetails = () => {
     itemsFromClothes = order.clothes.map((cloth: ClothItem) => {
       // Try to find matching item from notes to get the original price
       const matchingItem = notesItems.find(item => item.name === cloth.type);
-      const finalPrice = matchingItem?.price || cloth.materialCost || 0;
+      const finalPrice = (cloth as any)?.price != null && !isNaN(Number((cloth as any).price))
+        ? Number((cloth as any).price)
+        : (matchingItem?.price || cloth.materialCost || 0);
       console.log('Price calculation for', cloth.type, ':', {
         matchingItemPrice: matchingItem?.price,
         materialCost: cloth.materialCost,
+        clothPrice: (cloth as any)?.price,
         finalPrice
       });
       return {
@@ -357,7 +371,7 @@ const OrderDetails = () => {
   }
   
   // 🚀 FIXED: Calculate total price based on order type
-r  // Prefer backend-saved totalAmount; when absent, add BOTH item totals and cloth costs
+  // Prefer backend-saved totalAmount; when absent, add BOTH item totals and cloth costs
   const itemsTotalCalc = calculateTotal(displayItems);
   const clothMaterialTotalCalc = (order.clothes || []).reduce((sum: number, c: any) => sum + (Number(c.materialCost) || 0), 0);
   const clothPriceTotalCalc = (order.clothes || []).reduce((sum: number, c: any) => sum + (Number(c.price) || 0), 0);
@@ -547,7 +561,7 @@ r  // Prefer backend-saved totalAmount; when absent, add BOTH item totals and cl
             return (
               <View key={item.id || item.name} style={{ marginBottom: 12 }}>
                 <View style={styles.orderItem}>
-                  <RegularText style={styles.itemName}>{item.name}</RegularText>
+                  <RegularText style={styles.itemName}>{order.orderType === 'ALTERATION' ? `Alteration: ${item.name}` : item.name}</RegularText>
                   <RegularText style={styles.itemDetails}>
                     {item.quantity} x ₹{item.price}
                   </RegularText>
@@ -564,8 +578,22 @@ r  // Prefer backend-saved totalAmount; when absent, add BOTH item totals and cl
                     {!!clothForItem.fabric && (
                       <View style={styles.subRow}><RegularText style={styles.subKey}>Fabric</RegularText><RegularText style={styles.subVal}>{clothForItem.fabric}</RegularText></View>
                     )}
-                    {clothForItem.materialCost != null && (
-                      <View style={styles.subRow}><RegularText style={styles.subKey}>Material Cost</RegularText><RegularText style={styles.subVal}>₹{Number(clothForItem.materialCost).toFixed(2)}</RegularText></View>
+                    {order.orderType === 'ALTERATION' ? (
+                      <>
+                        <View style={styles.subRow}><RegularText style={styles.subKey}>Material Cost</RegularText><RegularText style={styles.subVal}>₹0.00</RegularText></View>
+                        {(clothForItem as any)?.price != null && (
+                          <View style={styles.subRow}><RegularText style={styles.subKey}>Price</RegularText><RegularText style={styles.subVal}>₹{Number((clothForItem as any).price).toFixed(2)}</RegularText></View>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {clothForItem.materialCost != null && (
+                          <View style={styles.subRow}><RegularText style={styles.subKey}>Material Cost</RegularText><RegularText style={styles.subVal}>₹{Number(clothForItem.materialCost).toFixed(2)}</RegularText></View>
+                        )}
+                        {(clothForItem as any)?.price != null && (
+                          <View style={styles.subRow}><RegularText style={styles.subKey}>Price</RegularText><RegularText style={styles.subVal}>₹{Number((clothForItem as any).price).toFixed(2)}</RegularText></View>
+                        )}
+                      </>
                     )}
                     {!!clothForItem.designNotes && (
                       <View style={styles.subRow}><RegularText style={styles.subKey}>Notes</RegularText><RegularText style={styles.subVal}>{clothForItem.designNotes}</RegularText></View>
@@ -635,14 +663,31 @@ r  // Prefer backend-saved totalAmount; when absent, add BOTH item totals and cl
 
       <View style={styles.section}>
         <TitleText style={styles.sectionTitle}>Notes</TitleText>
-        <RegularText style={styles.notes}>{order.notes}</RegularText>
+        {(() => {
+          try {
+            if (!order.notes) return <RegularText style={styles.notes}>-</RegularText>;
+            if (typeof order.notes === 'string') {
+              try {
+                const n = JSON.parse(order.notes);
+                if (n && typeof n === 'object' && typeof n.notes === 'string') {
+                  return <RegularText style={styles.notes}>{n.notes}</RegularText>;
+                }
+              } catch {}
+              return <RegularText style={styles.notes}>{order.notes}</RegularText>;
+            } else if (typeof (order as any).notes?.notes === 'string') {
+              return <RegularText style={styles.notes}>{(order as any).notes.notes}</RegularText>;
+            }
+          } catch {}
+          return <RegularText style={styles.notes}>-</RegularText>;
+        })()}
       </View>
 
       <View style={styles.actionButtons}>
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, (order.status === 'in_progress' || order.status === 'delivered' || order.status === 'cancelled') && { opacity: 0.5 }]}
           onPress={() => askConfirm('in_progress')}
           activeOpacity={0.85}
+          disabled={order.status === 'in_progress' || order.status === 'delivered' || order.status === 'cancelled'}
         >
           <LinearGradient
             colors={['#229B73', '#1a8f6e', '#000000']}
@@ -655,9 +700,10 @@ r  // Prefer backend-saved totalAmount; when absent, add BOTH item totals and cl
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, order.status === 'delivered' && { opacity: 0.5 }]}
           onPress={() => askConfirm('delivered')}
           activeOpacity={0.85}
+          disabled={order.status === 'delivered'}
         >
           <LinearGradient
             colors={['#229B73', '#1a8f6e', '#000000']}
