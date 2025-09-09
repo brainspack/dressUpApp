@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image, ScrollView } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
@@ -10,6 +11,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Button from '../../components/Button';
 import { launchImageLibrary, ImagePickerResponse, MediaType } from 'react-native-image-picker';
+import apiService from '../../services/api';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
@@ -21,23 +23,75 @@ const ProfileScreen = () => {
   const [userName, setUserName] = useState('');
   const [tempUserName, setTempUserName] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [localImageUri, setLocalImageUri] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
 
   useEffect(() => {
     // Load user data from context
     if (userInfo) {
-      const displayName = userInfo.name || userInfo.phone || 'User';
+      // Prioritize name over phone number, but if no name, show a default
+      const displayName = userInfo.name && userInfo.name.trim() ? userInfo.name : 'User';
       setUserName(displayName);
       setTempUserName(displayName);
-      setProfileImage(userInfo.profileImage || null);
+      // Ensure profileImage is a string, not an object
+      const profileImageValue = typeof userInfo.profileImage === 'string' 
+        ? userInfo.profileImage 
+        : null;
+      setProfileImage(profileImageValue);
       console.log('ProfileScreen: Loaded user data:', userInfo);
+      console.log('ProfileScreen: Profile image from userInfo:', userInfo.profileImage);
+      console.log('ProfileScreen: Profile image type:', typeof userInfo.profileImage);
+      console.log('ProfileScreen: Profile image length:', userInfo.profileImage?.length);
+      
+      // If user doesn't have a name, automatically enter edit mode
+      if (!userInfo.name || !userInfo.name.trim()) {
+        setIsEditing(true);
+      }
     } else {
       // Fallback for new users
       setUserName('User');
       setTempUserName('User');
       setProfileImage(null);
+      setIsEditing(true); // Auto-enter edit mode for new users
     }
   }, [userInfo]);
+
+  // Load fresh user profile data from API when component mounts
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (accessToken) {
+        try {
+          console.log('ProfileScreen: Loading user profile from API...');
+          const profileData = await apiService.getUserProfile();
+          console.log('ProfileScreen: API profile data:', profileData);
+          
+          // Update local context with fresh data
+          if (profileData) {
+            // Prioritize name over mobile number, but if no name, show a default
+            const displayName = profileData.name && profileData.name.trim() ? profileData.name : 'User';
+            setUserName(displayName);
+            setTempUserName(displayName);
+            
+            // If user doesn't have a name, automatically enter edit mode
+            if (!profileData.name || !profileData.name.trim()) {
+              setIsEditing(true);
+            }
+            
+            // Update language if it's different
+            if (profileData.language && profileData.language.toLowerCase() !== currentLanguage) {
+              console.log('ProfileScreen: Updating language from API:', profileData.language);
+              setSelectedLanguage(profileData.language.toLowerCase());
+            }
+          }
+        } catch (error) {
+          console.error('ProfileScreen: Error loading user profile from API:', error);
+          // Don't show error to user, just use context data
+        }
+      }
+    };
+
+    loadUserProfile();
+  }, [accessToken, currentLanguage]);
 
   useEffect(() => {
     setSelectedLanguage(currentLanguage);
@@ -48,8 +102,23 @@ const ProfileScreen = () => {
     // Update UI immediately
     setSelectedLanguage(newLanguage);
     try {
+      // Update language in the app
       await setAppLanguage(newLanguage);
       await i18n.changeLanguage(newLanguage);
+      
+      // Update language preference in the backend
+      try {
+        const updateData = {
+          language: newLanguage.toUpperCase() // Convert to EN/HI format
+        };
+        console.log('ProfileScreen: Updating language preference:', updateData);
+        await apiService.updateUserProfile(updateData);
+        console.log('ProfileScreen: Language preference updated successfully');
+      } catch (apiError) {
+        console.error('ProfileScreen: Error updating language preference:', apiError);
+        // Don't revert UI changes if API fails, just log the error
+      }
+      
       console.log('Language changed successfully to', newLanguage);
     } catch (error) {
       console.error('Error changing language:', error);
@@ -65,18 +134,29 @@ const ProfileScreen = () => {
     }
 
     try {
-      // Update profile data in context and storage
+      // Update profile data via API
+      const updateData = {
+        name: tempUserName.trim(),
+        language: selectedLanguage.toUpperCase() // Convert to EN/HI format
+      };
+      
+      console.log('ProfileScreen: Updating profile with data:', updateData);
+      const updatedProfile = await apiService.updateUserProfile(updateData);
+      console.log('ProfileScreen: API response:', updatedProfile);
+      
+      // Update local context and storage
       await updateUserProfile({ 
         name: tempUserName.trim(),
         profileImage: profileImage || undefined 
       });
+      
       setUserName(tempUserName.trim());
       setIsEditing(false);
       Alert.alert('Success', 'Profile updated successfully!');
       console.log('ProfileScreen: Profile saved successfully');
     } catch (error) {
       console.error('ProfileScreen: Error saving profile:', error);
-      Alert.alert('Error', 'Failed to update profile');
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
     }
   };
 
@@ -115,12 +195,27 @@ const ProfileScreen = () => {
       .slice(0, 2);
   };
 
+  // Test if image URL is accessible
+  const testImageUrl = async (url: string) => {
+    try {
+      console.log('🔍 ProfileScreen: Testing image URL accessibility:', url);
+      const response = await fetch(url, { method: 'HEAD' });
+      console.log('🔍 ProfileScreen: Image URL test result:', response.status, response.statusText);
+      return response.ok;
+    } catch (error) {
+      console.error('🔍 ProfileScreen: Image URL test failed:', error);
+      return false;
+    }
+  };
+
+
   const handleChangePhoto = () => {
     const options = {
       mediaType: 'photo' as MediaType,
       includeBase64: false,
       maxHeight: 2000,
       maxWidth: 2000,
+      quality: 0.8 as const,
     };
 
     launchImageLibrary(options, async (response: ImagePickerResponse) => {
@@ -129,22 +224,66 @@ const ProfileScreen = () => {
       }
 
       if (response.assets && response.assets.length > 0) {
-        const imageUri = response.assets[0].uri;
-        if (imageUri) {
-          setProfileImage(imageUri);
-          // Save image immediately to context
+        const asset = response.assets[0];
+        const imageUri = asset.uri;
+        const fileName = asset.fileName || `profile_${Date.now()}.jpg`;
+        const fileType = asset.type || 'image/jpeg';
+
+        if (imageUri && fileName && fileType) {
           try {
-            await updateUserProfile({ profileImage: imageUri });
-            console.log('ProfileScreen: Profile image updated successfully');
-          } catch (error) {
-            console.error('ProfileScreen: Error updating profile image:', error);
+            console.log('🚀 ProfileScreen: Starting S3 profile image upload...');
+            
+            // Show loading state
+            setLocalImageUri(imageUri); // Store local image URI
+            setProfileImage(imageUri); // Show local image immediately
+            
+            // Upload to S3
+            const uploadResult = await apiService.uploadProfileImage(imageUri, fileName, fileType);
+            
+            if (uploadResult.success && uploadResult.profileImageUrl) {
+              console.log('🚀 ProfileScreen: Profile image uploaded to S3 successfully!');
+              console.log('🚀 ProfileScreen: S3 URL received:', uploadResult.profileImageUrl);
+              
+              // Update profile with S3 URL
+              await updateUserProfile({ profileImage: uploadResult.profileImageUrl });
+              console.log('ProfileScreen: Profile image updated successfully with S3 URL');
+              
+              // Update local state with backend serving URL
+              setProfileImage(uploadResult.profileImageUrl);
+              console.log('ProfileScreen: Local state updated with backend URL:', uploadResult.profileImageUrl);
+              
+              // Clear local image URI since we now have the backend URL
+              setLocalImageUri(null);
+              
+              Alert.alert('Success', 'Profile image updated successfully!');
+            } else {
+              console.error('ProfileScreen: Upload failed:', uploadResult);
+              throw new Error(uploadResult.error || 'Failed to upload profile image');
+            }
+          } catch (error: any) {
+            console.error('ProfileScreen: Error uploading profile image:', error);
+            
+            // Revert to previous image on error
+            setProfileImage(userInfo?.profileImage || null);
+            
+            let errorMessage = 'Failed to upload profile image. Please try again.';
+            if (error.message && error.message.includes('Access Denied')) {
+              errorMessage = 'AWS S3 Access Denied. Please check your AWS permissions.';
+            } else if (error.message && error.message.includes('403')) {
+              errorMessage = 'Permission denied. Please contact administrator to fix AWS S3 permissions.';
+            }
+            
+            Alert.alert('Upload Error', errorMessage);
           }
+        } else {
+          Alert.alert('Error', 'Invalid image data. Please try again.');
         }
       }
     });
   };
 
   console.log('Current language in render:', currentLanguage, 'Selected:', selectedLanguage);
+  console.log('ProfileScreen: Current profileImage state:', profileImage);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -185,7 +324,39 @@ const ProfileScreen = () => {
         >
           <View style={styles.profileIconContainer}>
             {profileImage ? (
-              <Image source={{ uri: profileImage }} style={styles.profileImageRounded} />
+              <Image 
+                source={{ 
+                  uri: profileImage,
+                  cache: 'reload' // Force reload the image
+                }} 
+                style={styles.profileImageRounded}
+                onLoad={() => {
+                  console.log('✅ ProfileScreen: Profile image loaded successfully:', profileImage);
+                  // Clear local image URI since S3 image loaded successfully
+                  if (localImageUri && profileImage !== localImageUri) {
+                    setLocalImageUri(null);
+                  }
+                }}
+                onError={(error) => {
+                  console.log('🚨 ProfileScreen: Profile image load error:', error.nativeEvent.error);
+                  console.log('🚨 ProfileScreen: Failed image URI:', profileImage);
+                  
+                  // Fallback to local image if available, otherwise show initials
+                  if (localImageUri) {
+                    console.log('🔄 ProfileScreen: Falling back to local image URI');
+                    setProfileImage(localImageUri);
+                  } else {
+                    console.log('🔄 ProfileScreen: No local image, showing initials');
+                    setProfileImage(null);
+                  }
+                }}
+                onLoadStart={() => {
+                  console.log('🔄 ProfileScreen: Starting to load image:', profileImage);
+                }}
+                onLoadEnd={() => {
+                  console.log('🏁 ProfileScreen: Finished loading image:', profileImage);
+                }}
+              />
             ) : (
               <Text style={styles.profileInitials}>{getInitials(userName)}</Text>
             )}
@@ -201,7 +372,7 @@ const ProfileScreen = () => {
       {!isEditing ? (
         <View style={styles.infoSection}>
           <View style={styles.sectionHeader}>
-            <TitleText style={styles.sectionTitle}>Profile Information</TitleText>
+            <TitleText style={styles.sectionTitle}>{t('profile.profileInformation')}</TitleText>
           </View>
 
           {/* Name Display */}
@@ -267,6 +438,15 @@ const ProfileScreen = () => {
             <TitleText style={styles.sectionTitle}>Edit Profile</TitleText>
           </View>
           
+          {/* Show helpful message for new users */}
+          {(!userInfo?.name || !userInfo.name.trim()) && (
+            <View style={styles.helpMessageContainer}>
+              <RegularText style={styles.helpMessage}>
+                👋 Welcome! Please set your name to personalize your profile.
+              </RegularText>
+            </View>
+          )}
+          
           <View style={styles.editInputContainer}>
             <RegularText style={styles.editLabel}>Name</RegularText>
             <TextInput
@@ -304,6 +484,7 @@ const ProfileScreen = () => {
             />
           </>
         ) : null}
+        
         
         <Button
           variant="gradient"
@@ -502,6 +683,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.textPrimary,
     marginBottom: 12,
+  },
+  helpMessageContainer: {
+    backgroundColor: '#E0F2FE',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.brand,
+  },
+  helpMessage: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    lineHeight: 20,
   },
   editInput: {
     borderWidth: 1,

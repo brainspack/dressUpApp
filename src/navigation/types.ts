@@ -27,6 +27,8 @@ export type CustomerStackParamList = {
   CustomerDetails: { customerId: string };
   AddCustomer: undefined;
   EditCustomer: { customerId: string };
+  AddMeasurement: { customerId: string };
+  MeasurementHistory: { customerId: string };
 };
 
 export type OrderStackParamList = {

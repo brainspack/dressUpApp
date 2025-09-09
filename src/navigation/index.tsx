@@ -30,6 +30,8 @@ import TailorList from '../screens/Tailor/TailorList';
 import TailorDetails from '../screens/Tailor/TailorDetails';
 import EditTailor from '../screens/Tailor/EditTailor';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
+import AddMeasurement from '../screens/Measurement/AddMeasurement';
+import MeasurementHistory from '../screens/Measurement/MeasurementHistory';
 
 // Import types
 import {
@@ -90,6 +92,16 @@ const CustomerNavigator = () => {
         name="EditCustomer" 
         component={EditCustomerScreen}
         options={{ title: 'Edit Customer' }}
+      />
+      <CustomerStack.Screen 
+        name="AddMeasurement" 
+        component={AddMeasurement}
+        options={{ title: 'Add Measurement' }}
+      />
+      <CustomerStack.Screen 
+        name="MeasurementHistory" 
+        component={MeasurementHistory}
+        options={{ title: 'Measurement History' }}
       />
     </CustomerStack.Navigator>
   );

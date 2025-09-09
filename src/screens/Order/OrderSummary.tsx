@@ -1,17 +1,5 @@
-/**
- * OrderSummary Screen
- * 
- * This screen displays between outfit selection and order creation.
- * It shows:
- * - Customer information (name, phone, avatar)
- * - Selected outfit details with icons
- * - Total and discount fields
- * - Navigation to AddOrder screen
- * 
- * Data is fetched from backend API for customer details.
- */
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, TextInput } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image, Alert, TextInput } from 'react-native';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { OrderStackParamList } from '../../navigation/types';
@@ -22,6 +10,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Button from '../../components/Button';
 import apiService from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { styles } from './styles/OrderSummaryStyles';
 
 type OrderSummaryScreenNavigationProp = NativeStackNavigationProp<OrderStackParamList, 'OrderSummary'>;
 type OrderSummaryScreenRouteProp = RouteProp<OrderStackParamList, 'OrderSummary'>;
@@ -106,6 +95,21 @@ const OrderSummary = () => {
     } catch (error) {
       console.error('Error checking for updated price:', error);
     }
+  };
+
+  // Get uploaded images from AsyncStorage
+  const getUploadedImages = async (outfitType: string) => {
+    try {
+      const storedImages = await AsyncStorage.getItem(`uploadedImages_${outfitType}`);
+      if (storedImages) {
+        const images = JSON.parse(storedImages);
+        console.log(`Found uploaded images for ${outfitType}:`, images);
+        return images;
+      }
+    } catch (error) {
+      console.error('Error getting uploaded images:', error);
+    }
+    return [];
   };
 
   const fetchCustomerDetails = async () => {
@@ -193,6 +197,18 @@ const OrderSummary = () => {
         const appliedDiscount = Math.min(adv, priceToSend + materialToSend);
         const discountedTotal = Math.max(0, (priceToSend + materialToSend) - appliedDiscount);
 
+        // Get uploaded images for this outfit type
+        const uploadedImages = await getUploadedImages(outfit.type);
+        const processedImageUrls = uploadedImages.map((img: any) => 
+          typeof img === 'string' ? img : img.url || img.originalUrl || ''
+        ).filter((url: string) => url);
+
+        console.log('🚀 OrderSummary: Including uploaded images:', {
+          outfitType: outfit.type,
+          uploadedImages: uploadedImages,
+          processedImageUrls: processedImageUrls
+        });
+
         const payload = {
           customerId: customerIdToUse!,
           shopId: shopId,
@@ -211,7 +227,7 @@ const OrderSummary = () => {
             materialCost: isAlteration ? 0 : materialToSend,
             price: isAlteration ? discountedTotal : Math.max(0, (priceToSend + materialToSend) - appliedDiscount) - materialToSend,
             designNotes: '',
-            imageUrls: [],
+            imageUrls: processedImageUrls, // Include the uploaded images
             videoUrls: [],
           }],
           alterationPrice: isAlteration ? Math.max(0, priceToSend - appliedDiscount) : undefined,
@@ -292,6 +308,16 @@ const OrderSummary = () => {
         } catch (error) {
           console.error(`Failed to create order for ${outfit.name}:`, error);
         }
+      }
+
+      // Clear stored images after successful order creation
+      try {
+        for (const outfit of localSelectedOutfits) {
+          await AsyncStorage.removeItem(`uploadedImages_${outfit.type}`);
+        }
+        console.log('Cleared stored images for all outfit types');
+      } catch (cleanupError) {
+        console.error('Error clearing stored images:', cleanupError);
       }
 
       Alert.alert('Success', 'Orders created successfully!');
@@ -531,327 +557,5 @@ const OrderSummary = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContainer: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-    backgroundColor: colors.white,
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  placeholder: {
-    width: 40,
-  },
-  customerCard: {
-    margin: 16,
-    padding: 20,
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  customerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarContainer: {
-    marginRight: 16,
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  avatarText: {
-    color: colors.white,
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  customerDetails: {
-    flex: 1,
-  },
-  customerName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 4,
-  },
-  customerPhone: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  outfitsSection: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-  },
-  outfitChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 24,
-    marginRight: 8,
-  },
-  outfitChipIconWrap: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-    overflow: 'hidden',
-  },
-  outfitChipIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-  },
-  outfitChipText: {
-    maxWidth: 110,
-    fontSize: 14,
-    color: colors.textPrimary,
-  },
-  outfitChipAdd: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 8,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 12,
-  },
-  outfitCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    marginBottom: 8,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  outfitInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  outfitIconContainer: {
-    width: 40,
-    height: 40,
-    marginRight: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  outfitIcon: {
-    width: 32,
-    height: 32,
-  },
-  outfitName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  outfitActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  addButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.brand,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  addButtonGradient: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  removeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#fef2f2',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    shadowColor: '#ef4444',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  addOutfitButton: {
-    marginHorizontal: 16,
-    marginBottom: 20,
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: colors.brand,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  addOutfitButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  addOutfitText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  totalSection: {
-    marginHorizontal: 16,
-    marginBottom: 20,
-    padding: 16,
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  totalAmount: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  discountInput: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  discountLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  discountField: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: 8,
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  discountValue: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  advanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  advanceInput: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.textPrimary,
-    paddingVertical: 0,
-    paddingHorizontal: 0,
-  },
-  bottomContainer: {
-    padding: 16,
-    backgroundColor: colors.white,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  nextButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  nextButtonGradient: {
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nextButtonText: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-});
 
 export default OrderSummary;

@@ -3,10 +3,17 @@ import { Order, OrderItem } from '../types/order';
 
 // For Android emulator, use 10.0.2.2 to access host machine for iOS simulator, use localhost
 // For physical devices, use your computer's IP address
+// Try multiple URLs for Android emulator compatibility
+const getAndroidApiUrl = () => {
+  // For Android emulator, try 10.0.2.2 first (standard emulator IP)
+  // If that fails, the app can fallback to the actual machine IP
+  return 'http://10.0.2.2:3001';
+};
+
 const API_BASE_URL = __DEV__ 
   ? Platform.OS === 'android' 
-    ? 'http://10.0.2.2:3000' 
-    : 'http://localhost:3000'
+    ? getAndroidApiUrl()
+    : 'http://localhost:3001'
   : 'http://your-production-api-url.com';
 
 export interface AuthResponse {
@@ -14,7 +21,10 @@ export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   user: {
+    id: string;
     phone: string;
+    name: string;
+    profileImage: string | null;
     role: string;
     shopId: string | null;
   };
@@ -62,58 +72,101 @@ class ApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-    
-    console.log('Making API request to:', url);
-    console.log('Access token available:', !!this.accessToken);
-    if (this.accessToken) {
-      console.log('Token starts with:', this.accessToken.substring(0, 20) + '...');
-    }
-    
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
+    // For Android, try multiple URLs if the first one fails
+    const urlsToTry = Platform.OS === 'android' && __DEV__ 
+      ? [
+          `http://192.168.29.79:3001${endpoint}`,  // Primary URL (actual IP)
+          `${this.baseUrl}${endpoint}`,  // Fallback to 10.0.2.2
+          `http://localhost:3001${endpoint}`  // Last resort
+        ]
+      : [`${this.baseUrl}${endpoint}`];
 
-    if (this.accessToken) {
-      headers['Authorization'] = `Bearer ${this.accessToken}`;
-      console.log('Authorization header set:', `Bearer ${this.accessToken.substring(0, 20)}...`);
-    } else {
-      console.log('No access token available for request');
-    }
+    let lastError: Error | null = null;
 
-    const defaultOptions: RequestInit = {
-      headers: {
-        ...headers,
-        ...options.headers,
-      },
-      ...options,
-    };
-
-    try {
-      const response = await fetch(url, defaultOptions);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    for (const url of urlsToTry) {
+      console.log('Making API request to:', url);
+      console.log('Access token available:', !!this.accessToken);
+      if (this.accessToken) {
+        console.log('Token starts with:', this.accessToken.substring(0, 20) + '...');
       }
       
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('API request failed:', error);
-      if (error instanceof TypeError && error.message.includes('Network request failed')) {
-        throw new Error('Network connection failed. Please check your internet connection and ensure the backend server is running.');
+      const headers: Record<string, string> = {};
+
+      // Only set Content-Type for non-FormData requests
+      if (!(options.body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
+        console.log('🚀 API: Setting Content-Type to application/json');
+      } else {
+        console.log('🚀 API: FormData detected, not setting Content-Type header');
       }
-      throw error;
+
+      if (this.accessToken) {
+        headers['Authorization'] = `Bearer ${this.accessToken}`;
+        console.log('Authorization header set:', `Bearer ${this.accessToken.substring(0, 20)}...`);
+      } else {
+        console.log('No access token available for request');
+      }
+
+      const defaultOptions: RequestInit = {
+        headers: {
+          ...headers,
+          ...options.headers,
+        },
+        ...options,
+      };
+
+      try {
+        const response = await fetch(url, defaultOptions);
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+          throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error(`API request failed for ${url}:`, error);
+        console.error('🚀 API: Error details:', {
+          message: (error as Error).message,
+          name: (error as Error).name,
+          stack: (error as Error).stack?.substring(0, 200)
+        });
+        lastError = error as Error;
+        
+        // If this is not the last URL to try, continue to the next one
+        if (url !== urlsToTry[urlsToTry.length - 1]) {
+          console.log(`Trying next URL...`);
+          continue;
+        }
+      }
     }
+
+    // If all URLs failed, throw the last error
+    if (lastError instanceof TypeError && lastError.message.includes('Network request failed')) {
+      throw new Error('Network connection failed. Please check your internet connection and ensure the backend server is running.');
+    }
+    throw lastError || new Error('All API endpoints failed');
   }
 
   // Send OTP to mobile number
   async sendOtp(mobileNumber: string): Promise<OtpResponse> {
-    return this.request<OtpResponse>('/auth/send-otp', {
-      method: 'POST',
-      body: JSON.stringify({ mobileNumber }),
-    });
+    console.log('🚀 [API] sendOtp called with mobileNumber:', mobileNumber);
+    console.log('🚀 [API] Current baseUrl:', this.baseUrl);
+    console.log('🚀 [API] Platform.OS:', Platform.OS);
+    console.log('🚀 [API] __DEV__:', __DEV__);
+    
+    try {
+      const result = await this.request<OtpResponse>('/auth/send-otp', {
+        method: 'POST',
+        body: JSON.stringify({ mobileNumber }),
+      });
+      console.log('🚀 [API] sendOtp success:', result);
+      return result;
+    } catch (error) {
+      console.error('🚀 [API] sendOtp error:', error);
+      throw error;
+    }
   }
 
   // Verify OTP and get tokens
@@ -173,33 +226,42 @@ class ApiService {
     clothes: Array<{
       type: string;
       materialCost: number;
+      price: number; // 🚀 FIXED: Add missing price field
       designNotes?: string;
       color?: string | null;
       fabric?: string | null;
-      imageUrls?: string[];
-      imageData?: string[]; // Add imageData field
+      imageUrls?: string[]; // S3 URLs
       videoUrls?: string[];
     }>;
+    costs?: Array<{
+      materialCost: number;
+      laborCost: number;
+      totalCost: number;
+    }>; // 🚀 ADDED: Cost data for cost table
     notes?: string;
   }): Promise<Order> {
     console.log('=== API SERVICE: Creating order ===');
-    console.log('🚀 Order data clothes:', orderData.clothes?.map(c => ({ 
-      type: c.type, 
-      imageUrls: c.imageUrls, 
-      imageData: c.imageData,
-      imageUrlsLength: c.imageUrls?.length || 0,
-      imageDataLength: c.imageData?.length || 0,
-      hasImages: !!(c.imageUrls && c.imageUrls.length > 0),
-      hasImageData: !!(c.imageData && c.imageData.length > 0)
+    console.log('🚀 Order data clothes with S3 URLs:', orderData.clothes?.map(c => ({ 
+      type: c.type,
+      materialCost: c.materialCost,
+      price: c.price,
+      color: c.color,
+      fabric: c.fabric,
+      designNotes: c.designNotes,
+      s3ImageUrls: c.imageUrls, 
+      imageUrlsCount: c.imageUrls?.length || 0,
+      hasS3Images: !!(c.imageUrls && c.imageUrls.length > 0)
+    })));
+    console.log('🚀 Order data costs:', orderData.costs?.map(c => ({
+      materialCost: c.materialCost,
+      laborCost: c.laborCost,
+      totalCost: c.totalCost
     })));
     
-    // 🚀 Log first few characters of imageData to verify content
+    // 🚀 Log S3 URLs to verify content
     orderData.clothes?.forEach((cloth, index) => {
       if (cloth.imageUrls && cloth.imageUrls.length > 0) {
-        console.log(`🚀 API: Cloth ${index} imageUrls samples:`, cloth.imageUrls.map(img => img.substring(0, 50) + '...'));
-      }
-      if (cloth.imageData && cloth.imageData.length > 0) {
-        console.log(`🚀 API: Cloth ${index} imageData samples:`, cloth.imageData.map(img => img.substring(0, 50) + '...'));
+        console.log(`🚀 API: Cloth ${index} S3 URLs:`, cloth.imageUrls);
       }
     });
     
@@ -207,8 +269,7 @@ class ApiService {
       ...orderData,
       clothes: orderData.clothes?.map(c => ({
         ...c,
-        imageUrls: c.imageUrls ? `[${c.imageUrls.length} images]` : '[]',
-        imageData: c.imageData ? `[${c.imageData.length} images]` : '[]'
+        imageUrls: c.imageUrls ? `[${c.imageUrls.length} S3 images]` : '[]'
       }))
     });
     console.log('=== END API SERVICE LOG ===');
@@ -433,6 +494,280 @@ class ApiService {
   async getAssignedOrdersForTailor(tailorId: string): Promise<any[]> {
     return this.request<any[]>(`/orders/assigned/${encodeURIComponent(tailorId)}`, {
       method: 'GET',
+    });
+  }
+
+  // 🚀 USER PROFILE METHODS
+  async getUserProfile(): Promise<any> {
+    return this.request<any>('/users/profile', {
+      method: 'GET',
+    });
+  }
+
+  async updateUserProfile(updateData: { name?: string; language?: string; profileImage?: string }): Promise<any> {
+    return this.request<any>('/users/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(updateData),
+    });
+  }
+
+  // Profile image upload method
+  async uploadProfileImage(imageUri: string, fileName: string, fileType: string): Promise<{
+    success: boolean;
+    profileImageUrl?: string;
+    fileKey?: string;
+    error?: string;
+  }> {
+    try {
+      console.log('🚀 API: Starting profile image upload...');
+      
+      // 1. Create FormData for direct backend upload
+      const formData = new FormData();
+      formData.append('image', {
+        uri: imageUri,
+        type: fileType,
+        name: fileName,
+      } as any);
+
+      console.log('🚀 API: FormData created for profile image upload:', {
+        fileName: fileName,
+        fileType: fileType,
+        imageUri: imageUri.substring(0, 50) + '...',
+        formDataKeys: Object.keys(formData)
+      });
+      
+      // 2. Upload directly to backend
+      const uploadResponse = await this.request<{
+        success: boolean;
+        fileKey?: string;
+        viewUrl?: string;
+        publicUrl?: string;
+        error?: string;
+      }>('/users/profile/upload-image', {
+        method: 'POST',
+        body: formData as any,
+      });
+      
+      console.log('🚀 API: Backend upload response:', uploadResponse);
+      
+      if (!uploadResponse.success) {
+        throw new Error(uploadResponse.error || 'Failed to upload profile image');
+      }
+
+      // Create backend serving URL for the profile image
+      const backendImageUrl = `http://192.168.29.79:3001/users/profile/image/${encodeURIComponent(uploadResponse.fileKey)}`;
+      
+      return {
+        success: true,
+        profileImageUrl: backendImageUrl,
+        fileKey: uploadResponse.fileKey,
+        s3Url: uploadResponse.publicUrl
+      };
+      
+    } catch (error: any) {
+      console.error('🚀 API: Profile image upload error:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to upload profile image'
+      };
+    }
+  }
+
+  // Refresh profile image URL when it expires
+  async refreshProfileImageUrl(fileKey: string): Promise<{
+    success: boolean;
+    signedUrl?: string;
+    error?: string;
+  }> {
+    try {
+      console.log('🚀 API: Refreshing profile image URL for fileKey:', fileKey);
+      
+      const response = await this.request<any>('/users/profile/refresh-image-url', {
+        method: 'POST',
+        body: JSON.stringify({ fileKey }),
+      });
+
+      return response;
+    } catch (error: any) {
+      console.error('🚀 API: Error refreshing profile image URL:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to refresh profile image URL'
+      };
+    }
+  }
+
+  // Order image upload method - S3 Direct Upload
+  async uploadOrderImage(imageUri: string, fileName: string, fileType: string): Promise<{
+    success: boolean;
+    orderImageUrl?: string;
+    fileKey?: string;
+    s3Url?: string;
+    error?: string;
+  }> {
+    try {
+      console.log('🚀 API: Starting S3 order image upload...');
+      
+      // 1. Create FormData for S3 upload
+      const formData = new FormData();
+      formData.append('image', {
+        uri: imageUri,
+        type: fileType,
+        name: fileName,
+      } as any);
+
+      console.log('🚀 API: FormData created for S3 order image upload:', {
+        fileName: fileName,
+        fileType: fileType,
+        imageUri: imageUri.substring(0, 50) + '...',
+        formDataKeys: Object.keys(formData),
+        isFormData: formData instanceof FormData
+      });
+      
+      // 2. Upload directly to S3 via backend
+      const uploadResponse = await this.request<{
+        success: boolean;
+        fileKey?: string;
+        s3Url?: string;
+        signedUrl?: string;
+        message?: string;
+        error?: string;
+      }>('/orders/s3/upload', {
+        method: 'POST',
+        body: formData as any,
+      });
+      
+      console.log('🚀 API: S3 upload response:', uploadResponse);
+      
+      if (!uploadResponse.success) {
+        throw new Error(uploadResponse.error || 'Failed to upload order image to S3');
+      }
+
+      return {
+        success: true,
+        orderImageUrl: uploadResponse.signedUrl || uploadResponse.s3Url,
+        fileKey: uploadResponse.fileKey,
+        s3Url: uploadResponse.s3Url
+      };
+      
+    } catch (error: any) {
+      console.error('🚀 API: S3 Order image upload error:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to upload order image to S3'
+      };
+    }
+  }
+
+  // Get order image from S3
+  async getOrderImageFromS3(fileKey: string): Promise<{
+    success: boolean;
+    imageUrl?: string;
+    error?: string;
+  }> {
+    try {
+      console.log('🚀 API: Getting order image from S3 for fileKey:', fileKey);
+      
+      const imageUrl = `http://192.168.29.79:3001/orders/s3/image/${encodeURIComponent(fileKey)}`;
+      
+      return {
+        success: true,
+        imageUrl: imageUrl
+      };
+    } catch (error: any) {
+      console.error('🚀 API: Error getting order image from S3:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to get order image from S3'
+      };
+    }
+  }
+
+  // Refresh order image URL when it expires
+  async refreshOrderImageUrl(fileKey: string): Promise<{
+    success: boolean;
+    signedUrl?: string;
+    error?: string;
+  }> {
+    try {
+      console.log('🚀 API: Refreshing order image URL for fileKey:', fileKey);
+      
+      const response = await this.request<any>('/orders/refresh-image-url', {
+        method: 'POST',
+        body: JSON.stringify({ fileKey }),
+      });
+
+      return response;
+    } catch (error: any) {
+      console.error('🚀 API: Error refreshing order image URL:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to refresh order image URL'
+      };
+    }
+  }
+
+  // 🚀 S3 UPLOAD METHODS
+  async getUploadUrl(fileName: string, fileType: string): Promise<{
+    success: boolean;
+    uploadUrl?: string;
+    fileKey?: string;
+    viewUrl?: string;
+    publicUrl?: string;
+    error?: string;
+  }> {
+    return this.request('/orders/upload-url', {
+      method: 'POST',
+      body: JSON.stringify({ fileName, fileType }),
+    });
+  }
+
+  async uploadToS3(uploadUrl: string, file: any): Promise<Response> {
+    console.log('🚀 Uploading to S3:', {
+      uploadUrl: uploadUrl.substring(0, 100) + '...',
+      fileType: file.type,
+      fileSize: file.size
+    });
+    
+    return fetch(uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type || 'image/jpeg',
+      },
+    });
+  }
+
+  async listUploadedImages(): Promise<{
+    success: boolean;
+    count?: number;
+    images?: any[];
+    error?: string;
+  }> {
+    return this.request('/orders/uploaded-images', {
+      method: 'GET',
+    });
+  }
+
+  async getViewUrl(fileKey: string): Promise<{
+    success: boolean;
+    viewUrl?: string;
+    error?: string;
+  }> {
+    return this.request('/orders/view-url', {
+      method: 'POST',
+      body: JSON.stringify({ fileKey }),
+    });
+  }
+
+  async refreshImageUrls(imageUrls: string[]): Promise<{
+    success: boolean;
+    refreshedUrls?: string[];
+    error?: string;
+  }> {
+    return this.request('/orders/refresh-image-urls', {
+      method: 'POST',
+      body: JSON.stringify({ imageUrls }),
     });
   }
 }

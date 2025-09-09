@@ -81,6 +81,13 @@ const Register = ({ setIsAuthenticated, setAccessToken }: RegisterProps) => {
       console.log('Registration successful:', data);
       setAccessToken(data.accessToken);
       apiService.setAccessToken(data.accessToken);
+      
+      // Store complete user data including profileImage
+      if (data?.user) {
+        await AsyncStorage.setItem('userInfo', JSON.stringify(data.user));
+        console.log('Register: Stored complete user data:', data.user);
+      }
+      
       const shopId = (data as any)?.user?.shopId || null;
       console.log('[Register] saving shopId from auth response =', shopId);
       if (shopId) {

@@ -88,6 +88,7 @@ export default {
       enterName: 'Enter Name',
       changePhoto: 'Change Photo',
       logout: 'Logout',
+      profileInformation: 'Profile Information',
     },
     customer: {
       customer: 'Customer',

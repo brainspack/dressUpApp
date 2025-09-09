@@ -44,6 +44,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           try {
             // Try to load stored user info
             const userData = JSON.parse(storedUserInfo);
+            console.log('🔍 AuthContext: Loaded stored user info:', userData);
+            console.log('🔍 AuthContext: Profile image from stored data:', userData?.profileImage);
+            console.log('🔍 AuthContext: Profile image type:', typeof userData?.profileImage);
+            console.log('🔍 AuthContext: Profile image length:', userData?.profileImage?.length);
             setUserInfo(userData);
           } catch (e) {
             // If stored data is corrupted, decode from token
@@ -108,10 +112,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const updateUserProfile = async (updates: Partial<UserInfo>) => {
     if (!userInfo) return;
     
-    const updatedUserInfo = { ...userInfo, ...updates };
-    setUserInfo(updatedUserInfo);
-    await AsyncStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
-    console.log('AuthContext: User profile updated:', updatedUserInfo);
+    try {
+      // Call the backend API to update the profile
+      const apiService = (await import('../services/api')).default;
+      const result = await apiService.updateUserProfile(updates);
+      console.log('AuthContext: Backend profile update result:', result);
+      
+      // Update local state with the response from backend
+      const updatedUserInfo = { 
+        ...userInfo, 
+        name: result.name || userInfo.name,
+        profileImage: result.profileImage || userInfo.profileImage
+      };
+      setUserInfo(updatedUserInfo);
+      await AsyncStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+      console.log('AuthContext: User profile updated locally:', updatedUserInfo);
+    } catch (error) {
+      console.error('AuthContext: Error updating profile:', error);
+      // Fallback: update local state only if backend fails
+      const updatedUserInfo = { ...userInfo, ...updates };
+      setUserInfo(updatedUserInfo);
+      await AsyncStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+      console.log('AuthContext: User profile updated locally (fallback):', updatedUserInfo);
+    }
   };
 
   return (

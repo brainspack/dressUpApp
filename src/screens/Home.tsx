@@ -25,6 +25,7 @@ const Home = () => {
   const { accessToken, isAuthenticated, userInfo: ctxUser } = useAuth();
   const [shopStats, setShopStats] = useState<any>(null);
   const [userInfo, setUserInfo] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [currentShopId, setCurrentShopId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
@@ -72,7 +73,7 @@ const Home = () => {
     return () => clearInterval(timerId);
   }, [slides.length, snapWidth]);
 
-  const displayName = (ctxUser?.name as string) || (userInfo?.name as string) || 'User';
+  const displayName = (userProfile?.name && userProfile.name.trim()) || (ctxUser?.name && ctxUser.name.trim()) || (userInfo?.name && userInfo.name.trim()) || 'User';
   const userInitial = displayName?.trim()?.charAt(0)?.toUpperCase?.() || 'U';
 
   const getISTGreeting = (): string => {
@@ -249,7 +250,9 @@ const Home = () => {
       orderDate: o.orderDate, 
       createdAt: o.createdAt, 
       dateSource,
-      status: o.status 
+      status: o.status,
+      totalAmount: o.totalAmount,
+      materialCost: o.clothes?.[0]?.materialCost
     });
     
     const dt = new Date(dateSource);
@@ -264,7 +267,20 @@ const Home = () => {
       return;
     }
     
-    // Add order count to the chart based on the date range filter
+    // Get the order amount - prioritize totalAmount, then materialCost from clothes
+    let orderAmount = 0;
+    if (o.totalAmount && typeof o.totalAmount === 'number') {
+      orderAmount = o.totalAmount;
+    } else if (o.clothes && o.clothes.length > 0) {
+      // Sum up material costs from all clothes in the order
+      orderAmount = o.clothes.reduce((sum: number, cloth: any) => {
+        return sum + (cloth.materialCost || 0);
+      }, 0);
+    }
+    
+    console.log(`[Home] Order ${o.id} amount: ${orderAmount}`);
+    
+    // Add order amount to the chart based on the date range filter
     let key: string;
     
     if (barRangeActive === 'today') {
@@ -278,8 +294,15 @@ const Home = () => {
       key = localDayKey(dt);
     }
     
+    // Add the actual order amount to earnings
+    if (orderAmount > 0) {
+      addToBucket(key, orderAmount);
+      console.log(`[Home] Added order amount ${orderAmount} to earnings bucket: ${key}, date: ${dateSource}, orderId: ${o.id}`);
+    }
+    
+    // Also add order count for reference
     addOrderToBucket(key);
-    console.log(`[Home] Added order to bucket: ${key}, date: ${dateSource}, orderId: ${o.id}`);
+    console.log(`[Home] Added order count to bucket: ${key}, date: ${dateSource}, orderId: ${o.id}`);
   });
   
   console.log('[Home] Order buckets created:', dailyOrdersMap);
@@ -310,9 +333,8 @@ const Home = () => {
     }
   });
   
-  // Combine order counts with payment amounts for the bar chart
-  // This ensures that newly created orders show up immediately in the chart
-  // If we have payments, use them; otherwise use order counts as fallback
+  // Combine order amounts with payment amounts for the bar chart
+  // Priority: Use order amounts first (for exact earnings), then payments as fallback
   const combinedDataMap: Record<string, number> = {};
   const allKeys = new Set([...Object.keys(dailyEarningsMap), ...Object.keys(dailyOrdersMap)]);
   
@@ -320,42 +342,19 @@ const Home = () => {
     const paymentAmount = dailyEarningsMap[key] || 0;
     const orderCount = dailyOrdersMap[key] || 0;
     
-    // Priority: payments first, then orders
-    // If we have payments, use them; otherwise use order count * 1000 to make it visible
+    // Priority: Use order amounts (from dailyEarningsMap) first for exact earnings
+    // If no order amounts, use payment amounts as fallback
     if (paymentAmount > 0) {
       combinedDataMap[key] = paymentAmount;
     } else if (orderCount > 0) {
-      combinedDataMap[key] = orderCount * 1000; // Scale order count to make it visible
+      // If no amounts but we have orders, show 0 (don't scale order count)
+      combinedDataMap[key] = 0;
     }
   });
   
   console.log('[Home] Combined data map:', combinedDataMap);
 
-  if (payments.length === 0 && Array.isArray(orders) && orders.length > 0) {
-    console.log('[Home] No payments found; falling back to delivered orders aggregation');
-    (orders || []).forEach((o: any) => {
-      const isDelivered = String(o.status).toUpperCase?.() === 'DELIVERED';
-      if (!isDelivered) return;
-      const dateSource = o.deliveryDate || o.orderDate || o.createdAt;
-      if (!withinRange(dateSource)) return;
-      const dt = dateSource ? new Date(dateSource) : null;
-      if (!dt) return;
-      if (dt < startLocal || dt > endLocal) return;
-      const total = Array.isArray(o.costs)
-        ? o.costs.reduce((sum: number, c: any) => sum + (typeof c.totalCost === 'number' ? c.totalCost : ((c.materialCost || 0) + (c.laborCost || 0))), 0)
-        : 0;
-      if (barRangeActive === 'today') {
-        const key = localDayKey(dt);
-        addToBucket(key, total);
-      } else if (barRangeActive === 'three_months') {
-        const key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
-        addToBucket(key, total);
-      } else {
-        const key = localDayKey(dt);
-        addToBucket(key, total);
-      }
-    });
-  }
+  // Note: Order amounts are already processed above, no need for additional fallback logic
   // Compute display labels/data per filter
   let displayBarLabels: string[] = [];
   let displayBarData: number[] = [];
@@ -506,6 +505,7 @@ const Home = () => {
     decimalPlaces: 0,
     propsForBackgroundLines: { stroke: colors.border },
     barPercentage: 0.6,
+    formatYLabel: (value: string) => `₹${value}`,
   } as const;
 
   // Dimensions for charts to stay inside cards
@@ -524,6 +524,17 @@ const Home = () => {
           const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
           setUserInfo(tokenPayload);
           console.log('[Home] Decoded token payload:', tokenPayload);
+          
+          // Fetch user profile to get the latest name
+          try {
+            console.log('[Home] Fetching user profile...');
+            const profile = await apiService.getUserProfile();
+            console.log('[Home] User profile response:', profile);
+            setUserProfile(profile);
+          } catch (profileError) {
+            console.warn('[Home] Failed to fetch user profile:', profileError);
+            // Continue without profile data
+          }
           
           // Get shop stats if shopId exists
             if (tokenPayload.shopId) {
@@ -593,6 +604,17 @@ const Home = () => {
         (async () => {
           try {
             const tokenPayload = accessToken ? JSON.parse(atob(accessToken.split('.')[1])) : null;
+            
+            // Refresh user profile to get latest name
+            try {
+              console.log('[Home] Focus refresh: fetching user profile...');
+              const profile = await apiService.getUserProfile();
+              console.log('[Home] Focus refresh: user profile response:', profile);
+              setUserProfile(profile);
+            } catch (profileError) {
+              console.warn('[Home] Focus refresh: failed to fetch user profile:', profileError);
+            }
+            
             let shopId = tokenPayload?.shopId ?? currentShopId ?? shopStats?.id ?? null;
             if (!shopId) {
               try {
@@ -718,7 +740,7 @@ const Home = () => {
               <View style={styles.chartHeader}>
                 <View>
                   <TitleText style={styles.chartTitle}>{t('home.dailyEarnings')}</TitleText>
-                  <RegularText style={styles.chartSubtitle}>Orders & Payments</RegularText>
+                  <RegularText style={styles.chartSubtitle}>Order Amounts (₹)</RegularText>
                 </View>
                 <View style={styles.chartRange}>
                   <Dropdown
@@ -756,7 +778,7 @@ const Home = () => {
                   <View style={styles.legendRow}>
                     <View style={styles.legendItem}>
                       <View style={[styles.legendDot, { backgroundColor: colors.charts.bar }]} />
-                      <RegularText style={styles.legendText}>Orders & Payments</RegularText>
+                      <RegularText style={styles.legendText}>Order Amounts (₹)</RegularText>
                     </View>
                   </View>
                 </>
@@ -856,15 +878,15 @@ const Home = () => {
             <TitleText style={styles.sectionHeading}>{t('tailor.tailors')}</TitleText>
             <View style={styles.statsGrid}>
               <Card variant="stats" style={styles.statsCard}>
-                <Icon name="tape-measure" size={28} color="#2DBE91" style={styles.statsIcon} />
+                <Icon name="tape-measure" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabell}>Progress: {activeTailors}</RegularText>
               </Card>
               <Card variant="stats" style={styles.statsCard}>
-                <Icon name="account-off-outline" size={28} color="#2DBE91" style={styles.statsIcon} />
+                <Icon name="account-off-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabell}>{t('status.pending')}: {inactiveTailors}</RegularText>
               </Card>
               <Card variant="stats" style={styles.statsCard}>
-                <Icon name="account-hard-hat" size={28} color="#2DBE91" style={styles.statsIcon} />
+                <Icon name="account-hard-hat" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabell}>{t('common.total') || 'Total'}: {totalTailors}</RegularText>
               </Card>
             </View>
@@ -872,21 +894,21 @@ const Home = () => {
             <TitleText style={[styles.sectionHeading, { marginTop: 8 }]}>{t('customer.customers')}</TitleText>
             <View style={styles.orderStatsGrid}>
               <Card variant="stats" style={styles.orderStatsCard}>
-                <Icon name="account-clock-outline" size={28} color="#2DBE91" style={styles.statsIcon} />
+                <Icon name="account-clock-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabel}>Progress: {activeCustomers}</RegularText>
               </Card>
               <Card variant="stats" style={styles.orderStatsCard}>
-                <Icon name="account-check-outline" size={28} color="#2DBE91" style={styles.statsIcon} />
+                <Icon name="account-check-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabel}>{t('status.delivered')}: {deliveredCustomers}</RegularText>
               </Card>
             </View>
             <View style={styles.orderStatsGrid}>
               <Card variant="stats" style={styles.orderStatsCard}>
-                <Icon name="account-cancel-outline" size={28} color="#2DBE91" style={styles.statsIcon} />
+                <Icon name="account-cancel-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabel}>{t('status.pending')}: {pendingCustomers}</RegularText>
               </Card>
               <Card variant="stats" style={styles.orderStatsCard}>
-                <Icon name="account-multiple-outline" size={28} color="#2DBE91" style={styles.statsIcon} />
+                <Icon name="account-multiple-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabel}>{t('common.total') || 'Total'}: {totalCustomers}</RegularText>
               </Card>
             </View>
@@ -894,21 +916,21 @@ const Home = () => {
             <TitleText style={[styles.sectionHeading, { marginTop: 8 }]}>{t('order.orders')}</TitleText>
             <View style={styles.orderStatsGrid}>
               <Card variant="stats" style={styles.orderStatsCard}>
-                <Icon name="clipboard-list-outline" size={28} color="#2DBE91" style={styles.statsIcon} />
+                <Icon name="clipboard-list-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabel}>{t('order.total')}: {shopStats?.totalOrders ?? '0'}</RegularText>
               </Card>
               <Card variant="stats" style={styles.orderStatsCard}>
-                <Icon name="clipboard-clock-outline" size={28} color="#2DBE91" style={styles.statsIcon} />
+                <Icon name="clipboard-clock-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabel}>{t('order.activeOrders')}: {shopStats?.totalActiveOrders ?? '0'}</RegularText>
               </Card>
             </View>
             <View style={styles.orderStatsGrid}>
               <Card variant="stats" style={styles.orderStatsCard}>
-                <Icon name="progress-clock" size={28} color="#2DBE91" style={styles.statsIcon} />
+                <Icon name="progress-clock" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabel}>{t('order.pendingOrders')}: {shopStats?.pendingOrders ?? '0'}</RegularText>
               </Card>
               <Card variant="stats" style={styles.orderStatsCard}>
-                <Icon name="check-circle-outline" size={28} color="#2DBE91" style={styles.statsIcon} />
+                <Icon name="check-circle-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabel}>{t('order.completedOrders')}: {shopStats?.deliveredOrders ?? '0'}</RegularText>
               </Card>
             </View>
@@ -1137,6 +1159,8 @@ const styles = StyleSheet.create({
   },
   statsIcon: {
     marginBottom: 6,
+    opacity: 1,
+    backgroundColor: 'transparent',
   },
   chartsWrapper: {
     paddingHorizontal: 20,

@@ -1,0 +1,102 @@
+import React from 'react';
+import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import LinearGradient from 'react-native-linear-gradient';
+import { RegularText, TitleText } from '../../../components/CustomText';
+import { OrderFormItem } from '../types/orderTypes';
+import { styles } from '../styles/AddOrderStyles';
+
+interface ItemModalProps {
+  isVisible: boolean;
+  currentItem: OrderFormItem;
+  setCurrentItem: (item: OrderFormItem) => void;
+  onClose: () => void;
+  onSave: () => void;
+}
+
+export const ItemModal: React.FC<ItemModalProps> = ({
+  isVisible,
+  currentItem,
+  setCurrentItem,
+  onClose,
+  onSave,
+}) => {
+  const { t } = useTranslation();
+
+  if (!isVisible) return null;
+
+  return (
+    <View style={[styles.modalContainer, { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 }]}>
+      <View style={styles.modalContent}>
+        <TitleText style={styles.modalTitle}>{t('order.add_item')}</TitleText>
+        
+        <View style={styles.formGroup}>
+          <RegularText style={styles.label}>{t('order.itemDetails')}</RegularText>
+          <TextInput
+            style={styles.input}
+            value={currentItem.name}
+            onChangeText={(text) => setCurrentItem({ ...currentItem, name: text })}
+            placeholder={t('order.enterItemDetails')}
+          />
+        </View>
+
+        <View style={styles.formGroup}>
+          <RegularText style={styles.label}>{t('order.quantity')}</RegularText>
+          <TextInput
+            style={styles.input}
+            value={currentItem.quantity}
+            onChangeText={(text) => setCurrentItem({ ...currentItem, quantity: text.replace(/[^0-9]/g, '') })}
+            placeholder={t('order.enterQuantity')}
+            keyboardType="numeric"
+          />
+        </View>
+
+        <View style={styles.formGroup}>
+          <RegularText style={styles.label}>{t('order.price')}</RegularText>
+          <TextInput
+            style={styles.input}
+            value={currentItem.price}
+            onChangeText={(text) => setCurrentItem({ ...currentItem, price: text.replace(/[^0-9.]/g, '') })}
+            placeholder={t('order.enterPrice')}
+            keyboardType="numeric"
+          />
+        </View>
+
+        <View style={styles.formGroup}>
+          <RegularText style={styles.label}>{t('order.notes')}</RegularText>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={currentItem.notes}
+            onChangeText={(text) => setCurrentItem({ ...currentItem, notes: text })}
+            placeholder={t('order.enterNotes')}
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+
+        <View style={styles.modalButtons}>
+          <TouchableOpacity
+            style={[styles.modalButton, styles.cancelButton]}
+            onPress={onClose}
+          >
+            <RegularText style={styles.cancelButtonText}>{t('common.cancel')}</RegularText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={onSave}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={['#229B73', '#1a8f6e', '#000000']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.saveButtonGradient}
+            >
+              <Text style={styles.saveButtonText}>{t('order.save')}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+};

@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { View, Text, FlatList, TouchableOpacity } from 'react-native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MainTabParamList } from '../../navigation/types';
+import { CustomerStackParamList } from '../../navigation/types';
 import Button from '../../components/Button';
+import { measurementHistoryStyles as styles } from './styles/MeasurementHistoryStyles';
 
-type MeasurementHistoryScreenNavigationProp = NativeStackNavigationProp<MainTabParamList, 'MeasurementHistory'>;
+type MeasurementHistoryScreenNavigationProp = NativeStackNavigationProp<CustomerStackParamList, 'MeasurementHistory'>;
+type MeasurementHistoryScreenRouteProp = RouteProp<CustomerStackParamList, 'MeasurementHistory'>;
 
 interface Measurement {
   id: string;
@@ -31,7 +33,7 @@ interface Measurement {
 
 const MeasurementHistory = () => {
   const navigation = useNavigation<MeasurementHistoryScreenNavigationProp>();
-  const route = useRoute();
+  const route = useRoute<MeasurementHistoryScreenRouteProp>();
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -129,61 +131,5 @@ const MeasurementHistory = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  addButton: {
-    margin: 16,
-  },
-  list: {
-    padding: 16,
-  },
-  measurementItem: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  date: {
-    fontSize: 14,
-    color: '#666',
-  },
-  type: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  measurements: {
-    gap: 4,
-  },
-  detail: {
-    fontSize: 14,
-    color: '#333',
-  },
-  notes: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  loading: {
-    textAlign: 'center',
-    marginTop: 24,
-    color: '#666',
-  },
-  emptyText: {
-    textAlign: 'center',
-    marginTop: 24,
-    color: '#666',
-  },
-});
 
 export default MeasurementHistory; 

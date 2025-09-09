@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert, TouchableOpacity, Image } from 'react-native';
+import { View, ScrollView, Alert, TouchableOpacity, Image } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { OrderStackParamList } from '../../navigation/types';
-import Button from '../../components/Button';
+// import Button from '../../components/Button';
 // import * as SMS from 'expo-sms';
 import { Order, OrderStatus, ClothItem } from '../../types/order';
 import apiService from '../../services/api';
@@ -13,8 +13,9 @@ import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import orderCache from '../../services/orderCache';
 import { useAuth } from '../../context/AuthContext';
 import { RegularText, TitleText } from '../../components/CustomText';
-import colors from '../../constants/colors';
-import { base64ToDataUrl, isValidBase64DataUrl, isValidFileUri } from '../../utils/imageUtils';
+// import colors from '../../constants/colors';
+// import { base64ToDataUrl, isValidBase64DataUrl, isValidFileUri } from '../../utils/imageUtils';
+import { styles } from './styles/OrderDetailsStyles';
 
 type OrderDetailsScreenNavigationProp = NativeStackNavigationProp<OrderStackParamList, 'OrderDetails'>;
 type OrderDetailsScreenRouteProp = RouteProp<OrderStackParamList, 'OrderDetails'>;
@@ -494,8 +495,54 @@ const OrderDetails = () => {
               const snap = orderCache.getSnapshot(order.id);
               cacheImages = Array.isArray(snap?.uploadedImages) ? snap!.uploadedImages! : [];
             } catch {}
-            const directImages: string[] = Array.isArray((clothForItem as any)?.imageUrls) ? ((clothForItem as any).imageUrls as string[]) : [];
-            const imagesArray: string[] = directImages.length ? directImages : (notesImages.length ? notesImages : cacheImages);
+            // Handle both old string format and new object format for imageUrls
+            const directImages: string[] = Array.isArray((clothForItem as any)?.imageUrls) 
+              ? ((clothForItem as any).imageUrls as any[]).map((img: any) => {
+                  if (typeof img === 'string') {
+                    return img;
+                  } else if (img && typeof img === 'object') {
+                    // Try multiple possible URL properties
+                    return img.url || img.originalUrl || img.publicUrl || img.viewUrl || '';
+                  }
+                  return '';
+                }).filter((url: string) => url && url.trim() !== '') 
+              : [];
+            
+            // Also check if imageUrls is a single string (not an array)
+            if (typeof (clothForItem as any)?.imageUrls === 'string' && (clothForItem as any).imageUrls.trim() !== '') {
+              directImages.push((clothForItem as any).imageUrls);
+            }
+            
+            // Also check for images in the cloth object itself
+            const clothImages: string[] = [];
+            if ((clothForItem as any)?.images && Array.isArray((clothForItem as any).images)) {
+              (clothForItem as any).images.forEach((img: any) => {
+                if (typeof img === 'string') {
+                  clothImages.push(img);
+                } else if (img && typeof img === 'object') {
+                  const url = img.url || img.originalUrl || img.publicUrl || img.viewUrl || '';
+                  if (url) clothImages.push(url);
+                }
+              });
+            }
+            
+            // Combine all image sources with priority: directImages > clothImages > notesImages > cacheImages
+            let imagesArray: string[] = [
+              ...directImages,
+              ...clothImages,
+              ...notesImages,
+              ...cacheImages
+            ].filter((url, index, arr) => arr.indexOf(url) === index); // Remove duplicates
+            
+            // Only show images if they actually exist
+            if (imagesArray.length === 0) {
+              console.log('[OrderDetails] No images found for cloth item:', clothForItem?.type);
+            }
+            
+            // Debug logging for images (simplified)
+            if (imagesArray.length > 0) {
+              console.log('[OrderDetails] Found images for', clothForItem?.type, ':', imagesArray.length, 'images');
+            }
 
             const matchedByKeys = orderMeasurements.filter((m: any) => {
               const match = (m.orderId === order?.id || !m.orderId) && (m.type === clothForItem?.type || m.clothId === clothForItem?.id);
@@ -598,15 +645,28 @@ const OrderDetails = () => {
                     {!!clothForItem.designNotes && (
                       <View style={styles.subRow}><RegularText style={styles.subKey}>Notes</RegularText><RegularText style={styles.subVal}>{clothForItem.designNotes}</RegularText></View>
                     )}
+                    {/* Images Section - Only show if there are images */}
                     {imagesArray.length > 0 && (
                       <View style={{ marginTop: 8 }}>
-                        <RegularText style={styles.subTitle}>Images</RegularText>
+                        <RegularText style={styles.subTitle}>
+                          Images ({imagesArray.length})
+                        </RegularText>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                           {imagesArray.map((uri, idx) => (
                             <View key={idx} style={styles.imageThumbWrap}>
                               <View style={styles.imageThumbShadow}>
                                 <View style={styles.imageThumbBorder}>
-                                  <Image source={{ uri }} style={styles.imageThumb} />
+                                  <Image 
+                                    source={{ uri }} 
+                                    style={styles.imageThumb}
+                                    onError={(error) => {
+                                      console.log('🚨 OrderDetails Image load error:', error.nativeEvent.error);
+                                      console.log('🚨 Failed image URI:', uri);
+                                    }}
+                                    onLoad={() => {
+                                      console.log('✅ OrderDetails Image loaded successfully:', uri);
+                                    }}
+                                  />
                                 </View>
                               </View>
                             </View>
@@ -750,306 +810,5 @@ const OrderDetails = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContainer: {
-    flex: 1,
-    padding: 16,
-  },
-  header: {
-    padding: 16,
-    paddingTop: 20,
-    backgroundColor: colors.white,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  statusText: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  section: {
-    marginHorizontal: 12,
-    marginBottom: 12,
-    padding: 16,
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 10,
-    color: colors.textPrimary,
-  },
-  text: {
-    fontSize: 14,
-    marginBottom: 6,
-    color: colors.textSecondary,
-  },
-  orderItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-    backgroundColor: colors.backgroundSecondary,
-    padding: 12,
-    borderRadius: 8,
-  },
-  itemName: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    flex: 1,
-    fontWeight: '600',
-  },
-  itemDetails: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  totalContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  totalAmount: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  timelineEvent: {
-    marginBottom: 10,
-  },
-  timelineDate: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
-  timelineText: {
-    fontSize: 14,
-    color: colors.textPrimary,
-  },
-  notes: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  actionButtons: {
-    padding: 12,
-    paddingTop: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-  },
-  button: {
-    flex: 1,
-    padding: 1,
-    borderRadius: 10,
-    marginHorizontal: 4,
-    marginBottom: 4,
-    minWidth: '40%',
-    overflow: 'hidden',
-    backgroundColor: 'transparent',
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  buttonGradient: {
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  updateButton: {
-    backgroundColor: '#E0F2FE',
-    borderColor: '#BAE6FD',
-  },
-  completeButton: {
-    backgroundColor: '#DCFCE7',
-    borderColor: '#BBF7D0',
-  },
-  cancelButton: {
-    backgroundColor: '#FEE2E2',
-    borderColor: '#FECACA',
-  },
-  addClothButton: {
-    backgroundColor: '#F1F5F9',
-    borderColor: '#E2E8F0',
-  },
-  buttonText: {
-    color: colors.white,
-    textAlign: 'center',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  createOrderButton: { display: 'none' },
-  createOrderButtonText: { display: 'none' },
-  subCard: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  subTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    marginBottom: 6,
-  },
-  subRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  subKey: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  subVal: {
-    fontSize: 12,
-    color: colors.textPrimary,
-  },
-  imageThumbWrap: {
-    marginRight: 10,
-  },
-  imageThumbShadow: {
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  imageThumbBorder: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  imageThumb: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-  },
-  measureHeader: {
-    marginTop: 8,
-    paddingVertical: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  measureGrid: {
-    marginTop: 8,
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    padding: 12,
-    rowGap: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  measureGroup: {
-    marginBottom: 6,
-  },
-  measureItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  measureKey: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  measureVal: {
-    fontSize: 12,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  measureEmpty: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  // Cloth Images Styles
-  clothImagesContainer: {
-    marginTop: 8,
-  },
-  clothImageGroup: {
-    marginBottom: 16,
-  },
-  clothImageTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 8,
-  },
-  clothImageWrapper: {
-    marginRight: 12,
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  clothImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 12,
-  },
-  noImagesText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-});
 
 export default OrderDetails; 

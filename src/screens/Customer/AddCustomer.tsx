@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
+import { addCustomerStyles as styles } from './styles';
 import colors from '../../constants/colors';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -110,15 +111,23 @@ const AddCustomer = () => {
       navigation.goBack();
     } catch (err) {
       console.error('Error creating customer:', err);
-      const error = err as Error & { status?: number };
+      const error = err as Error & { status?: number; message?: string };
 
       // Handle specific error cases
-      if (error.status === 409) {
+      if (error.message && error.message.includes('mobile number already exists')) {
+        Alert.alert(
+          t('common.error'), 
+          'A customer with this mobile number already exists. Please use a different phone number.',
+          [
+            { text: 'OK', onPress: () => setForm(prev => ({ ...prev, phone: '' })) }
+          ]
+        );
+      } else if (error.status === 409) {
         Alert.alert(t('common.error'), t('customer.exists'));
       } else if (error.status === 400) {
         Alert.alert(t('common.error'), error.message || t('validation.required'));
       } else {
-        Alert.alert(t('common.error'), t('customer.createFailed'));
+        Alert.alert(t('common.error'), error.message || t('customer.createFailed'));
       }
     } finally {
       setIsLoading(false);
@@ -241,215 +250,5 @@ const AddCustomer = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 50,
-    paddingBottom: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 10,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-    marginLeft: 8,
-  },
-  formProgressContainer: {
-    marginHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 8,
-    width: '50%',
-    display: 'flex',
-    justifyContent: 'center',
-    alignSelf: 'center',
-
-
-  },
-  formProgressTrack: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#E5E7EB',
-    overflow: 'hidden',
-  },
-  formProgressFill: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#229B73',
-    overflow: 'hidden',
-  },
-  formCard: {
-    margin: 16,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: '#ffffff',
-    // iOS shadow
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    // Android shadow
-    elevation: 2,
-  },
-  imageUploaderContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  imageUploader: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#2DBE91',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    borderWidth: 3,
-    borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-  },
-  imagePlaceholder: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  imagePlaceholderText: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  cameraBadge: {
-    position: 'absolute',
-    bottom: 6,
-    right: 6,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  progressBarContainer: {
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  progressBar: {
-    width: '100%',
-    height: 4,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 2,
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: 4,
-    backgroundColor: '#2DBE91',
-    borderRadius: 2,
-  },
-  progressText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  labelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  label: {
-    color: colors.textSecondary,
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#ffffff',
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  phoneContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  countryCode: {
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  countryCodeText: {
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  phoneInput: {
-    flex: 1,
-    marginBottom: 0,
-  },
-  contactIcon: {
-    padding: 12,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  button: {
-    margin: 16,
-    borderRadius: 12,
-    overflow: 'hidden',
-    position: 'relative',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-});
 
 export default AddCustomer;

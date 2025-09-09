@@ -88,6 +88,7 @@ export default {
       enterName: 'नाम दर्ज करें',
       changePhoto: 'फोटो बदलें',
       logout: 'लॉगआउट',
+      profileInformation: 'प्रोफ़ाइल जानकारी',
     },
     customer: {
       customer: 'ग्राहक',

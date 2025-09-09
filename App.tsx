@@ -39,8 +39,10 @@ import Tailors from './src/screens/Tailors';
 
 // Import icons
 import Icon from 'react-native-vector-icons/MaterialIcons';
-// Ensure icon font is loaded (fixes missing icons on some setups)
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+// Ensure icon fonts are loaded (fixes missing icons on some setups)
 Icon.loadFont();
+MaterialCommunityIcons.loadFont();
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();

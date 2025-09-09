@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Image } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { View, Text, ScrollView, Alert, Image } from 'react-native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MainTabParamList } from '../../navigation/types';
+import { CustomerStackParamList } from '../../navigation/types';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
+import { addMeasurementStyles as styles } from './styles/AddMeasurementStyles';
 
-type AddMeasurementScreenNavigationProp = NativeStackNavigationProp<MainTabParamList, 'AddMeasurement'>;
+type AddMeasurementScreenNavigationProp = NativeStackNavigationProp<CustomerStackParamList, 'AddMeasurement'>;
+type AddMeasurementScreenRouteProp = RouteProp<CustomerStackParamList, 'AddMeasurement'>;
 
 type MeasurementType = 'men' | 'women' | 'children';
 
@@ -37,7 +39,7 @@ interface MeasurementForm {
 
 const AddMeasurement = () => {
   const navigation = useNavigation<AddMeasurementScreenNavigationProp>();
-  const route = useRoute();
+  const route = useRoute<AddMeasurementScreenRouteProp>();
   const [type, setType] = useState<MeasurementType>('men');
   const [selectedMeasurementField, setSelectedMeasurementField] = useState('height');
   const [form, setForm] = useState<MeasurementForm>({
@@ -296,32 +298,5 @@ const AddMeasurement = () => {
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  form: {
-    padding: 16,
-    gap: 16,
-  },
-  typeSelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  submitButton: {
-    marginTop: 8,
-  },
-  imageContainer: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  measurementImage: {
-    width: '100%',
-    height: 200,
-  },
-});
 
 export default AddMeasurement; 

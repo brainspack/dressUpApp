@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, TouchableOpacity, ImageBackground, Dimensions } from 'react-native';
+import { View, Alert, TouchableOpacity, ImageBackground, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,6 +10,7 @@ import Button from '../../components/Button';
 import apiService from '../../services/api';
 import { RegularText, TitleText } from '../../components/CustomText';
 import Svg, { Path, Defs, LinearGradient, Stop, RadialGradient, Rect } from 'react-native-svg';
+import { loginStyles as styles } from './styles/LoginStyles';
 
 // const { width } = Dimensions.get('window');
 const { width, height: screenHeight } = Dimensions.get('window');
@@ -66,10 +67,22 @@ const Login = ({ setIsAuthenticated, setAccessToken }: LoginProps) => {
     setIsLoading(true);
     try {
       const data = await apiService.verifyOtp(mobileNumber, otp);
+      console.log('🔍 Login: Complete login response:', data);
+      console.log('🔍 Login: User data from server:', data?.user);
+      console.log('🔍 Login: Profile image from server:', data?.user?.profileImage);
 
       if (data?.accessToken) {
         setAccessToken(data.accessToken);
         apiService.setAccessToken(data.accessToken);
+
+        // Store complete user data including profileImage
+        if (data?.user) {
+          await AsyncStorage.setItem('userInfo', JSON.stringify(data.user));
+          console.log('Login: Stored complete user data:', data.user);
+          console.log('Login: Profile image being stored:', data.user.profileImage);
+          console.log('Login: Profile image type:', typeof data.user.profileImage);
+          console.log('Login: Profile image length:', data.user.profileImage?.length);
+        }
 
         if (data?.user?.shopId) {
           await AsyncStorage.setItem('shopId', data.user.shopId);
@@ -219,59 +232,5 @@ const Login = ({ setIsAuthenticated, setAccessToken }: LoginProps) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  backgroundImage: { flex: 1, width: '100%', height: '100%' },
-
-  imageDim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)' },
-  overlay: { flex: 1 },
-  backArrow: { fontSize: 24, color: '#333', margin: 20 },
-  waveSvg: { position: 'absolute', top: 70, left: 0 },
-  formWrapper: { flex: 1, paddingHorizontal: 24, paddingTop: 320 },
-  loginTitle: { color: '#ffffff', fontSize: 32, fontWeight: '700', marginBottom: 40 },
-  formContainer: { marginBottom: 24 },
-  inputContainer: { marginBottom: 10 },
-  forgotPassword: { alignSelf: 'flex-start', marginTop: 6 },
-  forgotPasswordText: { color: '#ffffff', fontSize: 14, opacity: 0.9 },
-  shadowText: {
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  buttonContainer: { gap: 12, marginTop: 8 },
-  sendOtpButton: {
-    alignSelf: 'center',
-    width: '70%',
-    borderRadius: 25,
-  },
-  sendOtpText: {
-    fontWeight: '600',
-    color: '#2DBE91',
-    letterSpacing: 0.3,
-    fontSize: 17,
-  },
-  otpActionText: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  nextButton: {
-    position: 'absolute',
-    bottom: 32,
-    right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#ffffff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 6,
-  },
-  // nextArrow: { fontSize: 24, color: '#55ad88', fontWeight: '600' },
-});
 
 export default Login;

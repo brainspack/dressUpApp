@@ -26,7 +26,7 @@ const Dropdown = ({ label, value, options, onChange, error, placeholder = 'Selec
         <Text style={[styles.dropdownText, !selectedOption && styles.placeholder]}>
           {selectedOption ? selectedOption.label : placeholder}
         </Text>
-        <Icon name="chevron-down" size={19} color="#6b7280" />
+        <Icon name="chevron-down" size={19} color="#6b7280" style={{ opacity: 1 }} />
       </TouchableOpacity>
       {error && <Text style={styles.errorText}>{error}</Text>}
 
