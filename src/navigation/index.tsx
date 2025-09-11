@@ -72,7 +72,11 @@ const AuthNavigator = ({ setIsAuthenticated, setAccessToken }: { setIsAuthentica
 // Customer Navigator
 const CustomerNavigator = () => {
   return (
-    <CustomerStack.Navigator>
+    <CustomerStack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
       <CustomerStack.Screen 
         name="CustomerList" 
         component={CustomerListScreen}
@@ -81,7 +85,7 @@ const CustomerNavigator = () => {
       <CustomerStack.Screen 
         name="CustomerDetails" 
         component={CustomerDetailsScreen}
-        options={{ title: 'Customer Details' }}
+        options={{ headerShown: false }}
       />
       <CustomerStack.Screen 
         name="AddCustomer" 
@@ -145,7 +149,11 @@ const OrderNavigator = () => {
 // Tailor Navigator
 const TailorNavigator = () => {
   return (
-    <TailorStack.Navigator>
+    <TailorStack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
       <TailorStack.Screen name="TailorList" component={TailorList} options={{ title: 'Tailors' }} />
       <TailorStack.Screen name="TailorDetails" component={TailorDetails} options={{ title: 'Tailor Details' }} />
       <TailorStack.Screen name="AddTailor" component={AddTailor} options={{ title: 'Add Tailor' }} />

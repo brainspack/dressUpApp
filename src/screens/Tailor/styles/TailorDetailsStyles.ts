@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { colors } from '../../../constants/colors';
 
 export const tailorDetailsStyles = StyleSheet.create({
@@ -37,18 +37,48 @@ export const tailorDetailsStyles = StyleSheet.create({
     lineHeight: 24,
   },
   profileCard: {
-    margin: 16,
     borderRadius: 20,
     overflow: 'hidden',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    ...Platform.select({
+      ios: {
+        height: 280,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        marginHorizontal: 12,
+        marginVertical: 16,
+      },
+      android: {
+        height: 280,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        marginHorizontal: 0,
+        marginVertical: 0,
+      },
+    }),
   },
   profileGradient: {
-    padding: 32,
     alignItems: 'center',
+    borderRadius: 20,
+    ...Platform.select({
+      ios: {
+        padding: 10,
+        height: 310,
+        paddingTop: 36,
+        paddingBottom: 36,
+      },
+      android: {
+        padding: 32,
+        height: 280,
+        paddingTop: 36,
+        paddingBottom: 36,
+      },
+    }),
   },
   profileIconContainer: {
     width: 80,
@@ -60,7 +90,7 @@ export const tailorDetailsStyles = StyleSheet.create({
     marginBottom: 16,
   },
   tailorName: {
-    fontSize: 28,
+    fontSize: 23,
     fontWeight: '700',
     color: '#ffffff',
     marginBottom: 8,

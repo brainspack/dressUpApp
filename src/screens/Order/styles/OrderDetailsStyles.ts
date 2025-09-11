@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import colors from '../../../constants/colors';
 
 export const styles = StyleSheet.create({
@@ -125,9 +125,10 @@ export const styles = StyleSheet.create({
   actionButtons: {
     padding: 12,
     paddingTop: 0,
+  },
+  topRowButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    flexWrap: 'wrap',
   },
   button: {
     flex: 1,
@@ -138,8 +139,18 @@ export const styles = StyleSheet.create({
     minWidth: '40%',
     overflow: 'hidden',
     backgroundColor: 'transparent',
-    shadowOpacity: 0,
-    elevation: 0,
+    // Platform-specific styling for consistency
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   buttonGradient: {
     paddingVertical: 12,

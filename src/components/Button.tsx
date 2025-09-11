@@ -1,5 +1,5 @@
 // components/Button.tsx
-import { Text, TouchableOpacity, TouchableOpacityProps, StyleProp, ViewStyle, TextStyle, View, StyleSheet } from 'react-native';
+import { Text, TouchableOpacity, TouchableOpacityProps, StyleProp, ViewStyle, TextStyle, View, StyleSheet, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { TOptions } from 'i18next';
 import LinearGradient from 'react-native-linear-gradient';
@@ -29,6 +29,20 @@ const Button = ({ title, onPress, variant = 'primary', style, textStyle, height 
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    // Ensure consistent height across platforms
+    minHeight: height,
+    // Platform-specific styling for consistency
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   };
 
   const containerByVariant: Record<NonNullable<ButtonProps['variant']>, ViewStyle> = {
@@ -53,15 +67,35 @@ const Button = ({ title, onPress, variant = 'primary', style, textStyle, height 
 
   if (variant === 'gradient') {
     return (
-      <View style={[{ borderRadius: 12, overflow: 'hidden', height }, style] as StyleProp<ViewStyle>}>
+      <View style={[
+        { 
+          borderRadius: 12, 
+          overflow: 'hidden', 
+          height,
+          minHeight: height,
+          // Platform-specific styling for gradient buttons
+          ...Platform.select({
+            ios: {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.15,
+              shadowRadius: 4,
+            },
+            android: {
+              elevation: 4,
+            },
+          }),
+        }, 
+        style
+      ] as StyleProp<ViewStyle>}>
         <LinearGradient
           colors={gradientColors}
           start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 2}}
+          end={{ x: 1, y: 1}}
           style={StyleSheet.absoluteFillObject}
         />
         <TouchableOpacity
-          style={[styles.overlay, { height }]}
+          style={[styles.overlay, { height, minHeight: height }]}
           onPress={onPress}
           disabled={disabled}
           activeOpacity={0.8}
@@ -78,7 +112,7 @@ const Button = ({ title, onPress, variant = 'primary', style, textStyle, height 
 
   return (
     <TouchableOpacity
-      style={[baseContainer, containerByVariant[variant], { height }, style]}
+      style={[baseContainer, containerByVariant[variant], { height, minHeight: height }, style]}
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.8}
@@ -96,11 +130,13 @@ const styles = StyleSheet.create({
   overlay: {
     alignItems: 'center',
     justifyContent: 'center',
+    flex: 1,
   },
   buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    flex: 1,
   },
   iconContainer: {
     marginRight: 8,

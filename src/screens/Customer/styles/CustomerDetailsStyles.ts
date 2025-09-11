@@ -1,9 +1,10 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { colors } from '../../../constants/colors';
 
 export const customerDetailsStyles = StyleSheet.create({
   container: {
     flex: 1,
+
     backgroundColor: '#f8fafc',
   },
   loadingContainer: {
@@ -37,18 +38,49 @@ export const customerDetailsStyles = StyleSheet.create({
     lineHeight: 24,
   },
   profileCard: {
-    margin: 16,
+    margin: 7,
     borderRadius: 20,
     overflow: 'hidden',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    ...Platform.select({
+      ios: {
+        height: 280,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        marginHorizontal: 0,
+        marginVertical: 0,
+      },
+      android: {
+        height: 280,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        marginHorizontal: 12,
+        marginVertical: 16,
+      },
+    }),
   },
   profileGradient: {
-    padding: 32,
     alignItems: 'center',
+    borderRadius: 20,
+    ...Platform.select({
+      ios: {
+        padding: 10,
+        height: 310,
+        paddingTop: 36,
+        paddingBottom: 36,
+      },
+      android: {
+        padding: 32,
+        height: 280,
+        paddingTop: 36,
+        paddingBottom: 36,
+      },
+    }),
   },
   profileIconContainer: {
     width: 80,
@@ -60,27 +92,63 @@ export const customerDetailsStyles = StyleSheet.create({
     marginBottom: 16,
   },
   customerName: {
-    fontSize: 28,
     fontWeight: '700',
     color: '#ffffff',
-    marginBottom: 8,
     textAlign: 'center',
+    ...Platform.select({
+      ios: {
+        fontSize: 28,
+        marginBottom: 8,
+        letterSpacing: 0.2,
+      },
+      android: {
+        fontSize: 28,
+        marginBottom: 8,
+        letterSpacing: 0.2,
+      },
+    }),
   },
   customerNumber: {
-    fontSize: 16,
     color: 'rgba(255, 255, 255, 0.9)',
     fontWeight: '600',
+    ...Platform.select({
+      ios: {
+        fontSize: 16,
+        letterSpacing: 0.1,
+      },
+      android: {
+        fontSize: 16,
+        letterSpacing: 0.1,
+      },
+    }),
   },
   infoSection: {
-    margin: 16,
     backgroundColor: '#ffffff',
     borderRadius: 16,
-    padding: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    ...Platform.select({
+      ios: {
+        margin: 16,
+        padding: 20,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        marginHorizontal: 12,
+        marginVertical: 16,
+      },
+      android: {
+        margin: 16,
+        padding: 20,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        marginHorizontal: 12,
+        marginVertical: 16,
+      },
+    }),
   },
   sectionHeader: {
     flexDirection: 'row',

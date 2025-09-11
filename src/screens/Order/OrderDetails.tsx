@@ -5,7 +5,7 @@ import ConfirmModal from '../../components/ConfirmModal';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { OrderStackParamList } from '../../navigation/types';
-// import Button from '../../components/Button';
+import Button from '../../components/Button';
 // import * as SMS from 'expo-sms';
 import { Order, OrderStatus, ClothItem } from '../../types/order';
 import apiService from '../../services/api';
@@ -13,7 +13,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import orderCache from '../../services/orderCache';
 import { useAuth } from '../../context/AuthContext';
 import { RegularText, TitleText } from '../../components/CustomText';
-// import colors from '../../constants/colors';
+import colors from '../../constants/colors';
 // import { base64ToDataUrl, isValidBase64DataUrl, isValidFileUri } from '../../utils/imageUtils';
 import { styles } from './styles/OrderDetailsStyles';
 
@@ -743,52 +743,36 @@ const OrderDetails = () => {
       </View>
 
       <View style={styles.actionButtons}>
-        <TouchableOpacity
-          style={[styles.button, (order.status === 'in_progress' || order.status === 'delivered' || order.status === 'cancelled') && { opacity: 0.5 }]}
-          onPress={() => askConfirm('in_progress')}
-          activeOpacity={0.85}
-          disabled={order.status === 'in_progress' || order.status === 'delivered' || order.status === 'cancelled'}
-        >
-          <LinearGradient
-            colors={['#229B73', '#1a8f6e', '#000000']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.buttonGradient}
-          >
-            <RegularText style={styles.buttonText}>Start Processing</RegularText>
-          </LinearGradient>
-        </TouchableOpacity>
+        <View style={styles.topRowButtons}>
+          <Button
+            variant="gradient"
+            title="Start Processing"
+            height={36}
+            gradientColors={['#229B73', '#1a8f6e', '#000000']}
+            onPress={() => askConfirm('in_progress')}
+            disabled={order.status === 'in_progress' || order.status === 'delivered' || order.status === 'cancelled'}
+            style={{ borderRadius: 8, opacity: (order.status === 'in_progress' || order.status === 'delivered' || order.status === 'cancelled') ? 0.5 : 1, flex: 1, marginRight: 8 }}
+          />
 
-        <TouchableOpacity
-          style={[styles.button, order.status === 'delivered' && { opacity: 0.5 }]}
-          onPress={() => askConfirm('delivered')}
-          activeOpacity={0.85}
-          disabled={order.status === 'delivered'}
-        >
-          <LinearGradient
-            colors={['#229B73', '#1a8f6e', '#000000']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.buttonGradient}
-          >
-            <RegularText style={styles.buttonText}>Mark as Delivered</RegularText>
-          </LinearGradient>
-        </TouchableOpacity>
+          <Button
+            variant="gradient"
+            title="Mark as Delivered"
+            height={36}
+            gradientColors={['#229B73', '#1a8f6e', '#000000']}
+            onPress={() => askConfirm('delivered')}
+            disabled={order.status === 'delivered'}
+            style={{ borderRadius: 8, opacity: order.status === 'delivered' ? 0.5 : 1, flex: 1, marginLeft: 8 }}
+          />
+        </View>
 
-        <TouchableOpacity
-          style={styles.button}
+        <Button
+          variant="gradient"
+          title="Cancel Order"
+          height={36}
+          gradientColors={['#ef4444', '#dc2626', '#b91c1c']}
           onPress={() => askConfirm('cancelled')}
-          activeOpacity={0.85}
-        >
-          <LinearGradient
-            colors={['#ef4444', '#dc2626', '#b91c1c']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.buttonGradient}
-          >
-            <RegularText style={styles.buttonText}>Cancel Order</RegularText>
-          </LinearGradient>
-        </TouchableOpacity>
+          style={{ borderRadius: 8, width: '100%', marginTop: 12 }}
+        />
       </View>
 
       </ScrollView>

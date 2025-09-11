@@ -175,8 +175,6 @@ const TailorList = () => {
 
   return (
     <View style={styles.container}>
-    
-      
       <View style={styles.header}>
         <View style={styles.searchContainer}>
           <Icon name="search" size={20} color="#64748b" style={{ marginRight: 8 }} />

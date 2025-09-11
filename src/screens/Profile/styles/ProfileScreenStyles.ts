@@ -59,6 +59,7 @@ export const profileScreenStyles = StyleSheet.create({
   profileGradient: {
     padding: 40,
     alignItems: 'center',
+    borderRadius: 20,
   },
   profileIconContainer: {
     width: 80,

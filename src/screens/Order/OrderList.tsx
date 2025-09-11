@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Modal, TextInput, Animated, PanResponder, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Modal, TextInput, Animated, PanResponder, Alert, Platform } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { OrderStackParamList } from '../../navigation/types';
@@ -13,6 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import { RegularText, TitleText } from '../../components/CustomText';
 import colors from '../../constants/colors';
 import { styles } from './styles/OrderListStyles';
+import Button from '../../components/Button';
 
 
 type OrderListScreenNavigationProp = NativeStackNavigationProp<
@@ -575,27 +576,28 @@ const OrderList = () => {
         
         <View style={styles.actionButtons}>
           {activeTab === 'notAssigned' ? (
-            <TouchableOpacity
-              onPress={() => handleAssignOrder(item)}
-              hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
-            >
-              <LinearGradient
-                colors={[colors.brand, colors.brandDark, colors.blueDark]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.assignButton}
-              >
-                <UserPlus size={16} color="#ffffff" />
-                <RegularText style={styles.assignButtonText}>{t('order.assign')}</RegularText>
-              </LinearGradient>
-            </TouchableOpacity>
+            <View style={styles.assignButtonContainer}>
+              <Button
+                variant="gradient"
+                title={t('order.assign')}
+                height={34}
+                gradientColors={[colors.brand, colors.brandDark, colors.blueDark]}
+                icon={<UserPlus size={14} color="#fff" />}
+                onPress={() => handleAssignOrder(item)}
+                style={{ width: 90, borderRadius: 8 }}
+              />
+            </View>
           ) : (
-            <TouchableOpacity
-              onPress={() => handleCancelAssign(item)}
-              style={[styles.assignButton, { backgroundColor: colors.danger }]}
-            >
-                              <RegularText style={styles.assignButtonText}>{t('order.cancelAssign')}</RegularText>
-            </TouchableOpacity>
+            <View style={styles.assignButtonContainer}>
+              <Button
+                variant="gradient"
+                title="Unassign"
+                height={34}
+                gradientColors={[colors.danger, '#d12a2a', '#8a1d1d']}
+                onPress={() => handleCancelAssign(item)}
+                style={{ width: 90, borderRadius: 8 }}
+              />
+            </View>
           )}
         </View>
         </View>

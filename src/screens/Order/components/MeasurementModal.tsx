@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, TextInput, ScrollView, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import LinearGradient from 'react-native-linear-gradient';
 import { RegularText, TitleText } from '../../../components/CustomText';
 import { styles } from '../styles/AddOrderStyles';
+import Button from '../../../components/Button';
 import { measurementImages, measurementLabels } from '../utils/measurementUtils';
 
 interface MeasurementModalProps {
@@ -86,26 +87,21 @@ export const MeasurementModal: React.FC<MeasurementModalProps> = ({
 
         {/* Fixed Action Buttons */}
         <View style={styles.modalButtons}>
-          <TouchableOpacity
-            style={[styles.modalButton, styles.cancelButton]}
+          <Button
+            title={t('common.cancel')}
+            variant="light"
             onPress={onClose}
-          >
-            <RegularText style={styles.cancelButtonText}>{t('common.cancel')}</RegularText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.saveButton}
+            height={48}
+            style={{ borderRadius: 12, flex: 1, marginRight: 6 }}
+          />
+          <Button
+            title={t('order.save')}
+            variant="gradient"
             onPress={onSave}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={['#229B73', '#1a8f6e', '#000000']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.saveButtonGradient}
-            >
-              <Text style={styles.saveButtonText}>{t('order.save')}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+            height={48}
+            gradientColors={['#229B73', '#1a8f6e', '#000000']}
+            style={{ borderRadius: 12, flex: 1, marginLeft: 6 }}
+          />
         </View>
       </View>
     </View>

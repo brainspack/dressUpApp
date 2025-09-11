@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image, ScrollView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -208,6 +208,19 @@ const ProfileScreen = () => {
     }
   };
 
+  // Validate image URL format
+  const isValidImageUrl = (url: string | null): boolean => {
+    if (!url || typeof url !== 'string') return false;
+    
+    // Check if it's a valid URL format
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
 
   const handleChangePhoto = () => {
     const options = {
@@ -323,13 +336,14 @@ const ProfileScreen = () => {
           style={styles.profileGradient}
         >
           <View style={styles.profileIconContainer}>
-            {profileImage ? (
+            {profileImage && isValidImageUrl(profileImage) ? (
               <Image 
                 source={{ 
                   uri: profileImage,
-                  cache: 'reload' // Force reload the image
+                  cache: Platform.OS === 'ios' ? 'reload' : 'default'
                 }} 
                 style={styles.profileImageRounded}
+                resizeMode="cover"
                 onLoad={() => {
                   console.log('✅ ProfileScreen: Profile image loaded successfully:', profileImage);
                   // Clear local image URI since S3 image loaded successfully
@@ -341,14 +355,8 @@ const ProfileScreen = () => {
                   console.log('🚨 ProfileScreen: Profile image load error:', error.nativeEvent.error);
                   console.log('🚨 ProfileScreen: Failed image URI:', profileImage);
                   
-                  // Fallback to local image if available, otherwise show initials
-                  if (localImageUri) {
-                    console.log('🔄 ProfileScreen: Falling back to local image URI');
-                    setProfileImage(localImageUri);
-                  } else {
-                    console.log('🔄 ProfileScreen: No local image, showing initials');
-                    setProfileImage(null);
-                  }
+                  // Don't change state on error to avoid infinite loops
+                  // Just log the error and let the user retry
                 }}
                 onLoadStart={() => {
                   console.log('🔄 ProfileScreen: Starting to load image:', profileImage);
@@ -363,7 +371,9 @@ const ProfileScreen = () => {
           </View>
           <TitleText style={styles.profileName}>{userName}</TitleText>
           <TouchableOpacity style={styles.changePhotoButton} onPress={handleChangePhoto}>
-            <RegularText style={styles.changePhotoText}>{t('profile.changePhoto') || 'Change Photo'}</RegularText>
+            <RegularText style={styles.changePhotoText}>
+              {profileImage ? (t('profile.changePhoto') || 'Change Photo') : (t('profile.addPhoto') || 'Add Photo')}
+            </RegularText>
           </TouchableOpacity>
         </LinearGradient>
       </View>
@@ -561,6 +571,18 @@ const styles = StyleSheet.create({
   profileGradient: {
     padding: 40,
     alignItems: 'center',
+    borderRadius: 20,
+    width: '100%',
+    ...Platform.select({
+      ios: {
+        minHeight: 250,
+        paddingHorizontal: 1,
+        paddingVertical: 1,
+      },
+      android: {
+        minHeight: 180,
+      },
+    }),
   },
   profileIconContainer: {
     width: 80,
@@ -570,6 +592,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
+    ...Platform.select({
+      ios: {
+        marginTop: 30,
+      },
+    }),
   },
   profileImage: {
     width: 80,
@@ -580,6 +607,16 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
+    // Platform-specific styling for consistent image display
+    ...Platform.select({
+      ios: {
+        // marginTop: 40,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      },
+      android: {
+        backgroundColor: 'transparent',
+      },
+    }),
   },
   profileInitials: {
     fontSize: 32,

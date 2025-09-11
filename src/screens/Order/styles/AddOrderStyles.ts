@@ -198,7 +198,7 @@ export const styles = StyleSheet.create({
   },
   modalButtons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
     justifyContent: 'space-between',
     marginTop: 20,
     marginBottom: 8,
@@ -717,8 +717,11 @@ export const styles = StyleSheet.create({
     marginTop: 8,
   },
   imageUploadButton: {
+    width: '100%',
     borderRadius: 16,
     overflow: 'hidden',
+    position: 'relative',
+    minHeight: 56,
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -726,7 +729,7 @@ export const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   imageUploadGradient: {
-    padding: 20,
+    ...StyleSheet.absoluteFillObject,
   },
   imageUploadContent: {
     alignItems: 'center',

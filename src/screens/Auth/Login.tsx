@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Alert, TouchableOpacity, ImageBackground, Dimensions } from 'react-native';
+import { View, Alert, TouchableOpacity, ImageBackground, Dimensions, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -35,17 +35,30 @@ const Login = ({ setIsAuthenticated, setAccessToken }: LoginProps) => {
   const validateMobileNumber = (number: string) => /^[0-9]{10}$/.test(number);
 
   const handleSendOtp = async () => {
+    console.log('🚀 [Login] handleSendOtp called');
+    console.log('🚀 [Login] mobileNumber:', mobileNumber);
+    console.log('🚀 [Login] Platform.OS:', Platform.OS);
+    
     setMobileError('');
 
-    if (!mobileNumber) return setMobileError('Mobile number is required');
-    if (!validateMobileNumber(mobileNumber)) return setMobileError('Please enter a valid 10-digit mobile number');
+    if (!mobileNumber) {
+      console.log('🚀 [Login] No mobile number provided');
+      return setMobileError('Mobile number is required');
+    }
+    if (!validateMobileNumber(mobileNumber)) {
+      console.log('🚀 [Login] Invalid mobile number format:', mobileNumber);
+      return setMobileError('Please enter a valid 10-digit mobile number');
+    }
 
+    console.log('🚀 [Login] Starting OTP send process...');
     setIsLoading(true);
     try {
       const data = await apiService.sendOtp(mobileNumber);
+      console.log('🚀 [Login] OTP sent successfully:', data);
       setShowOtpInput(true);
       Alert.alert('Success', `OTP sent successfully! OTP: ${data.otp}`);
     } catch (error) {
+      console.error('🚀 [Login] OTP send failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to send OTP';
       setMobileError(errorMessage);
       Alert.alert('Error', errorMessage);
@@ -165,7 +178,10 @@ const Login = ({ setIsAuthenticated, setAccessToken }: LoginProps) => {
               <Input
                 label="Mobile Number"
                 value={mobileNumber}
-                onChangeText={setMobileNumber}
+                onChangeText={(text) => {
+                  console.log('🚀 [Login] Mobile number input changed:', text);
+                  setMobileNumber(text);
+                }}
                 error={mobileError}
                 placeholder="Enter mobile number"
                 keyboardType="phone-pad"
@@ -204,7 +220,12 @@ const Login = ({ setIsAuthenticated, setAccessToken }: LoginProps) => {
               {!showOtpInput ? (
                 <Button
                   title="Send OTP"
-                  onPress={handleSendOtp}
+                  onPress={() => {
+                    console.log('🚀 [Login] Send OTP button pressed');
+                    console.log('🚀 [Login] isLoading:', isLoading);
+                    console.log('🚀 [Login] mobileNumber:', mobileNumber);
+                    handleSendOtp();
+                  }}
                   variant="light"
                   disabled={isLoading}
                   style={styles.sendOtpButton}

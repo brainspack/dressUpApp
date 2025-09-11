@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import colors from '../../../constants/colors';
 
 export const styles = StyleSheet.create({
@@ -151,12 +151,12 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   orderContent: {
-    flex: 1,
+    flexShrink: 1,
     paddingLeft: 8,
-    paddingRight: 32,
+    paddingRight: 12,
   },
   orderHeader: {
-    width: '153%',
+    width: '145%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -167,6 +167,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    minWidth: 0, // allow content to shrink instead of pushing button off-screen
   },
   orderId: {
     fontSize: 16,
@@ -265,25 +266,130 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 0,
+  },
+  assignButtonContainer: {
+    borderRadius: 8,
+    overflow: 'hidden',
+    alignSelf: 'flex-end',
+    marginLeft: 'auto',
+    flexShrink: 0,
+    // Ensure the button renders above overflowing siblings on iOS
+    ...Platform.select({ ios: { zIndex: 2 }, android: {} }),
+  },
+  assignButtonTouchable: {
+    flex: 0,
+    borderRadius: 4,
+    // Platform-specific height enforcement
+    ...Platform.select({
+      ios: {
+        height: 40,
+        minHeight: 40,
+        maxHeight: 40,
+        borderRadius: 4,
+      },
+      android: {
+        height: 28,
+        minHeight: 28,
+        maxHeight: 28,
+      },
+    }),
   },
   assignButton: {
-    backgroundColor: colors.brand,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
     gap: 4,
-    shadowColor: colors.brand,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    justifyContent: 'center',
+    width: '100%',
+    // Platform-specific height enforcement
+    ...Platform.select({
+      ios: {
+        border:  colors.border,
+        borderWidth: 1,
+        height: 50,
+        minHeight: 50,
+        maxHeight: 50,
+        borderRadius: 4,
+        flex: 0,
+        // paddingHorizontal: 14,
+        // paddingVertical: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        // Keep gradient inside rounded corners
+        // overflow: 'hidden',
+      },
+      android: {
+        height: 28,
+        minHeight: 28,
+        maxHeight: 28,
+        flex: 0,
+      },
+    }),
+  },
+  cancelAssignButton: {
+    backgroundColor: colors.danger,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    gap: 4,
+    justifyContent: 'center',
+    width: '100%',
+    // Platform-specific height enforcement
+    ...Platform.select({
+      ios: {
+        height: 24,
+        minHeight: 24,
+        maxHeight: 24,
+        flex: 0,
+        paddingHorizontal: 4,
+        paddingVertical: 4,
+      },
+      android: {
+        height: 20,
+        minHeight: 20,
+        maxHeight: 20,
+        flex: 1,
+      },
+    }),
   },
   assignButtonText: {
     color: colors.white,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
+    textAlign: 'center',
+    // Platform-specific font rendering
+    ...Platform.select({
+      ios: {
+        fontFamily: 'System',
+        fontSize: 11,
+        fontWeight: '700',
+      },
+      android: {
+        fontFamily: 'sans-serif-medium',
+      },
+    }),
+  },
+  cancelAssignButtonText: {
+    color: colors.white,
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+    // Platform-specific font rendering
+    ...Platform.select({
+      ios: {
+        fontFamily: 'System',
+        fontSize: 11,
+        fontWeight: '600',
+      },
+      android: {
+        fontFamily: 'sans-serif-medium',
+      },
+    }),
   },
   orderIcon: {
     marginRight: 4,

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, Image, Alert } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { OrderStackParamList } from '../../navigation/types';
@@ -9,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiService from '../../services/api';
 import { RegularText, TitleText } from '../../components/CustomText';
+import Button from '../../components/Button';
 import colors from '../../constants/colors';
 import { styles } from './styles/OutfitSelectionScreenStyles';
 
@@ -572,44 +572,36 @@ const OutfitSelectionScreen = () => {
 
       {/* Gender Filter */}
       <View style={styles.genderFilter}>
-        <TouchableOpacity
-          style={styles.genderButton}
+        <Button
+          title={t('order.female')}
+          variant="gradient"
           onPress={() => setSelectedGender('female')}
-        >
-          <LinearGradient
-            colors={selectedGender === 'female' 
-              ? [colors.brand, colors.brandDark, colors.blueDark]
-              : ['#f3f4f6', '#e5e7eb']
-            }
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.genderButtonGradient}
-          >
-            <RegularText style={[
-              styles.genderButtonText,
-              selectedGender === 'female' && styles.genderButtonTextActive,
-            ]}>{t('order.female')}</RegularText>
-          </LinearGradient>
-        </TouchableOpacity>
-        <TouchableOpacity
+          gradientColors={selectedGender === 'female' 
+            ? [colors.brand, colors.brandDark, colors.blueDark]
+            : ['#f3f4f6', '#e5e7eb']
+          }
+          textStyle={[
+            styles.genderButtonText,
+            selectedGender === 'female' && styles.genderButtonTextActive,
+          ]}
           style={styles.genderButton}
+          height={48}
+        />
+        <Button
+          title={t('order.male')}
+          variant="gradient"
           onPress={() => setSelectedGender('male')}
-        >
-          <LinearGradient
-            colors={selectedGender === 'male' 
-              ? [colors.brand, colors.brandDark, colors.blueDark]
-              : ['#f3f4f6', '#e5e7eb']
-            }
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.genderButtonGradient}
-          >
-            <RegularText style={[
-              styles.genderButtonText,
-              selectedGender === 'male' && styles.genderButtonTextActive,
-            ]}>{t('order.male')}</RegularText>
-          </LinearGradient>
-        </TouchableOpacity>
+          gradientColors={selectedGender === 'male' 
+            ? [colors.brand, colors.brandDark, colors.blueDark]
+            : ['#f3f4f6', '#e5e7eb']
+          }
+          textStyle={[
+            styles.genderButtonText,
+            selectedGender === 'male' && styles.genderButtonTextActive,
+          ]}
+          style={styles.genderButton}
+          height={48}
+        />
       </View>
 
       {/* Outfit Grid */}

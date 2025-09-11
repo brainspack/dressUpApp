@@ -11,7 +11,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 50,
     paddingBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
@@ -108,34 +108,21 @@ export const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#e5e7eb',
+    gap: 4,
   },
   genderButton: {
     flex: 1,
     borderRadius: 8,
-    overflow: 'hidden',
-  },
-  genderButtonGradient: {
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  genderButtonActive: {
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginHorizontal: 2,
   },
   genderButtonText: {
     fontSize: 14,
+    fontWeight: '600',
     color: '#6b7280',
   },
   genderButtonTextActive: {
     color: '#ffffff',
+    fontWeight: '700',
   },
   outfitGrid: {
     paddingHorizontal: 16,

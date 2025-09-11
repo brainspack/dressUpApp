@@ -36,18 +36,20 @@ import Login from './src/screens/Auth/Login';
 import Register from './src/screens/Auth/Register';
 import ProfileScreen from './src/screens/Profile/ProfileScreen';
 import Tailors from './src/screens/Tailors';
+import TailorList from './src/screens/Tailor/TailorList';
+import TailorDetails from './src/screens/Tailor/TailorDetails';
+import AddTailor from './src/screens/Tailor/AddTailor';
+import EditTailor from './src/screens/Tailor/EditTailor';
 
 // Import icons
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-// Ensure icon fonts are loaded (fixes missing icons on some setups)
-Icon.loadFont();
-MaterialCommunityIcons.loadFont();
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 const CustomerStack = createNativeStackNavigator();
 const OrderStack = createNativeStackNavigator();
+const TailorStack = createNativeStackNavigator();
 
 
 const getTabBarIcon = (route: any, color: string, size: number) => {
@@ -71,12 +73,18 @@ const getTabBarIcon = (route: any, color: string, size: number) => {
 function OrderStackNavigator() {
   const { t } = useTranslation();
   return (
-    <OrderStack.Navigator>
+    <OrderStack.Navigator
+      screenOptions={{
+        headerTitleAlign: 'left',
+      }}
+    >
       <OrderStack.Screen
         name="OrderList"
         component={OrderList}
         options={{
-          headerTitle: () => (
+          // Clear the title so iOS doesn't center it; render our header in headerLeft
+          title: '',
+          headerLeft: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Icon name="list" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('order.orders')}</Text>
@@ -87,26 +95,28 @@ function OrderStackNavigator() {
       <OrderStack.Screen
         name="OrderDetails"
         component={OrderDetails}
-        options={{
+        options={({ navigation }) => ({
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Icon name="receipt-long" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('order.orderDetails')}</Text>
             </View>
           ),
-        }}
+          headerBackTitleVisible: false,
+        })}
       />
       <OrderStack.Screen
         name="AddOrder"
         component={AddOrder}
-        options={{
+        options={({ navigation }) => ({
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Icon name="add-shopping-cart" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>Create Order</Text>
             </View>
           ),
-        }}
+          headerBackTitleVisible: false,
+        })}
       />
       <OrderStack.Screen
         name="OutfitSelection"
@@ -125,13 +135,18 @@ function OrderStackNavigator() {
 function CustomerStackNavigator() {
   const { t } = useTranslation();
   return (
-    <CustomerStack.Navigator>
+    <CustomerStack.Navigator
+      screenOptions={{
+        headerTitleAlign: 'left',
+      }}
+    >
       <CustomerStack.Screen
         name="CustomerList"
         component={CustomerList}
         options={{
-          headerTitle: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          title: '',
+          headerLeft: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' ,marginLeft: 10}}>
               <Icon name="groups" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('customer.customers')}</Text>
             </View>
@@ -141,43 +156,109 @@ function CustomerStackNavigator() {
       <CustomerStack.Screen
         name="CustomerDetails"
         component={CustomerDetails}
-        options={{
+        options={({ navigation }) => ({
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Icon name="person" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('customer.customerDetails')}</Text>
             </View>
           ),
-        }}
+          // Use the native back button only; remove custom left icon to avoid duplicates
+          headerBackTitleVisible: false,
+        })}
       />
       <CustomerStack.Screen
         name="AddCustomer"
         component={AddCustomer}
-        options={{
+        options={({ navigation }) => ({
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Icon name="person-add-alt" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('customer.addCustomer')}</Text>
             </View>
           ),
-        }}
+          headerBackTitleVisible: false,
+        })}
       />
       <CustomerStack.Screen
         name="EditCustomer"
         component={EditCustomer}
-        options={{
+        options={({ navigation }) => ({
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Icon name="edit" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('customer.editCustomer')}</Text>
             </View>
           ),
-        }}
+          headerBackTitleVisible: false,
+        })}
       />
     </CustomerStack.Navigator>
   );
 }
 
+function TailorStackNavigator() {
+  return (
+    <TailorStack.Navigator
+      screenOptions={{
+        headerTitleAlign: 'left',
+      }}
+    >
+      <TailorStack.Screen
+        name="TailorList"
+        component={TailorList}
+        options={{
+          title: '',
+          headerLeft: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Icon name="content-cut" size={30} color="#111827" />
+              <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>Tailors</Text>
+            </View>
+          ),
+        }}
+      />
+      <TailorStack.Screen
+        name="TailorDetails"
+        component={TailorDetails}
+        options={({ navigation }) => ({
+          headerTitle: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Icon name="content-cut" size={30} color="#111827" />
+              <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>Tailor Details</Text>
+            </View>
+          ),
+          headerBackTitleVisible: false,
+        })}
+      />
+      <TailorStack.Screen
+        name="AddTailor"
+        component={AddTailor}
+        options={({ navigation }) => ({
+          headerTitle: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Icon name="content-cut" size={30} color="#111827" />
+              <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>Add Tailor</Text>
+            </View>
+          ),
+          headerBackTitleVisible: false,
+        })}
+      />
+      <TailorStack.Screen
+        name="EditTailor"
+        component={EditTailor}
+        options={({ navigation }) => ({
+          headerTitle: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Icon name="content-cut" size={30} color="#111827" />
+              <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>Edit Tailor</Text>
+            </View>
+          ),
+          headerBackTitleVisible: false,
+        })}
+      />
+    </TailorStack.Navigator>
+  );
+}
 
 
 function MainTabs() {
@@ -191,7 +272,7 @@ function MainTabs() {
       })}>
       <Tab.Screen name="Home" component={Home} options={{ headerShown: false }} />
       <Tab.Screen name="Customers" component={CustomerStackNavigator} options={{ headerShown: false }} />
-      <Tab.Screen name="Tailors" component={Tailors} options={{ headerShown: false }} />
+      <Tab.Screen name="Tailors" component={TailorStackNavigator} options={{ headerShown: false }} />
       <Tab.Screen name="Orders" component={OrderStackNavigator} options={{ headerShown: false }} />
 
       <Tab.Screen name="Account" component={ProfileScreen} options={{ headerShown: false }} />
