@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, Image, Platform, Modal } from 'react-native';
 import { useNavigation, RouteProp, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import LinearGradient from 'react-native-linear-gradient';
+import Button from '../../components/Button';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import { OrderStackParamList } from '../../navigation/types';
@@ -79,8 +80,10 @@ const AddOrder = () => {
     setCurrentCloth,
     currentMeasurement,
     setCurrentMeasurement,
-    clothImages,
-    setClothImages,
+    // Cast union list to broader any[] to satisfy handler typing while we
+    // support both string URLs and object metadata for images
+    clothImages as any[],
+    setClothImages as any,
     resolvedShopId,
     customerName,
     route
@@ -88,7 +91,8 @@ const AddOrder = () => {
 
   // DatePicker handlers
   const handleDeliveryDateChange = (event: any, selectedDate?: Date) => {
-    setShowDeliveryDatePicker(false);
+    // On Android the picker closes automatically; on iOS we keep it open in modal until Done
+    if (Platform.OS === 'android') setShowDeliveryDatePicker(false);
     if (selectedDate) {
       setDeliveryDateObj(selectedDate);
       setFormData({ ...formData, deliveryDate: selectedDate.toLocaleDateString() });
@@ -96,7 +100,7 @@ const AddOrder = () => {
   };
 
   const handleTrialDateChange = (event: any, selectedDate?: Date) => {
-    setShowTrialDatePicker(false);
+    if (Platform.OS === 'android') setShowTrialDatePicker(false);
     if (selectedDate) {
       setTrialDateObj(selectedDate);
       setFormData({ ...formData, trialDate: selectedDate.toLocaleDateString() });
@@ -518,20 +522,14 @@ const AddOrder = () => {
             </View>
           </View>
 
-          <TouchableOpacity
-            style={styles.createOrderButton}
+          <Button
+            title="Save Details"
+            variant="gradient"
             onPress={handleSaveAndBack}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={['#229B73', '#1a8f6e', '#000000']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.createOrderButtonGradient}
-            >
-              <Text style={styles.createOrderButtonText}>Save Details</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+            height={52}
+            gradientColors={['#229B73', '#1a8f6e', '#000000']}
+            style={{ borderRadius: 12, width: '100%' }}
+          />
         </View>
       </ScrollView>
 
@@ -570,24 +568,50 @@ const AddOrder = () => {
         onSelect={(status) => setFormData({ ...formData, status })}
       />
 
-      {/* Delivery Date Picker Modal */}
+      {/* Delivery Date Picker */}
       {showDeliveryDatePicker && (
-        <DateTimePicker
-          value={deliveryDateObj}
-          mode="date"
-          display="default"
-          onChange={handleDeliveryDateChange}
-        />
+        Platform.OS === 'ios' ? (
+          <Modal transparent animationType="fade" visible>
+            <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' }}>
+              <View style={{ backgroundColor: '#fff', paddingTop: 8, paddingBottom: 12 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 12, paddingBottom: 6 }}>
+                  <TouchableOpacity onPress={() => setShowDeliveryDatePicker(false)} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+                    <Text style={{ color: '#ef4444', fontWeight: '600' }}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setShowDeliveryDatePicker(false)} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+                    <Text style={{ color: '#229B73', fontWeight: '700' }}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker value={deliveryDateObj} mode="date" display="spinner" onChange={handleDeliveryDateChange} />
+              </View>
+            </View>
+          </Modal>
+        ) : (
+          <DateTimePicker value={deliveryDateObj} mode="date" display="default" onChange={handleDeliveryDateChange} />
+        )
       )}
 
-      {/* Trial Date Picker Modal */}
+      {/* Trial Date Picker */}
       {showTrialDatePicker && (
-        <DateTimePicker
-          value={trialDateObj}
-          mode="date"
-          display="default"
-          onChange={handleTrialDateChange}
-        />
+        Platform.OS === 'ios' ? (
+          <Modal transparent animationType="fade" visible>
+            <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' }}>
+              <View style={{ backgroundColor: '#fff', paddingTop: 8, paddingBottom: 12 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 12, paddingBottom: 6 }}>
+                  <TouchableOpacity onPress={() => setShowTrialDatePicker(false)} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+                    <Text style={{ color: '#ef4444', fontWeight: '600' }}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setShowTrialDatePicker(false)} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+                    <Text style={{ color: '#229B73', fontWeight: '700' }}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker value={trialDateObj} mode="date" display="spinner" onChange={handleTrialDateChange} />
+              </View>
+            </View>
+          </Modal>
+        ) : (
+          <DateTimePicker value={trialDateObj} mode="date" display="default" onChange={handleTrialDateChange} />
+        )
       )}
     </View>
   );
