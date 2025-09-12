@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, ScrollView, Alert, TouchableOpacity, Image } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// import LinearGradient from 'react-native-linear-gradient';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,7 +14,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import orderCache from '../../services/orderCache';
 import { useAuth } from '../../context/AuthContext';
 import { RegularText, TitleText } from '../../components/CustomText';
-import colors from '../../constants/colors';
+// import colors from '../../constants/colors';
 // import { base64ToDataUrl, isValidBase64DataUrl, isValidFileUri } from '../../utils/imageUtils';
 import { styles } from './styles/OrderDetailsStyles';
 
@@ -29,6 +30,7 @@ interface OrderItem {
 
 const OrderDetails = () => {
   const navigation = useNavigation<OrderDetailsScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   const route = useRoute<OrderDetailsScreenRouteProp>();
   const { accessToken } = useAuth();
   const [order, setOrder] = useState<Order | null>(null);
@@ -402,7 +404,7 @@ const OrderDetails = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollContainer}>
+      <ScrollView style={styles.scrollContainer} contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 24, 24) }}>
       <View style={styles.header}>
         <TitleText style={styles.title}>Order #ORD-{String(order.serialNumber).padStart(4, '0')}</TitleText>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) }]}>
@@ -720,7 +722,6 @@ const OrderDetails = () => {
       </View>
 
       
-
       <View style={styles.section}>
         <TitleText style={styles.sectionTitle}>Notes</TitleText>
         {(() => {
@@ -742,7 +743,7 @@ const OrderDetails = () => {
         })()}
       </View>
 
-      <View style={styles.actionButtons}>
+      <View style={[styles.actionButtons, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <View style={styles.topRowButtons}>
           <Button
             variant="gradient"

@@ -831,11 +831,11 @@ const Home = () => {
                   <View style={styles.pieLegendCol}>
                     <View style={styles.legendItem}>
                       <View style={[styles.legendDot, { backgroundColor: colors.charts.pieCompleted }]} />
-                      <RegularText style={styles.legendText}>{t('home.newStitch')}: {stitchCount}</RegularText>
+                      <RegularText style={styles.legendText} numberOfLines={1}>{t('home.newStitch')}: {stitchCount}</RegularText>
                     </View>
                     <View style={styles.legendItem}>
                       <View style={[styles.legendDot, { backgroundColor: colors.charts.pieAlterations }]} />
-                      <RegularText style={styles.legendText}>{t('home.alterations')}: {alterCount}</RegularText>
+                      <RegularText style={styles.legendText} numberOfLines={1}>{t('home.alterations')}: {alterCount}</RegularText>
                     </View>
                   </View>
                 </View>
@@ -882,7 +882,7 @@ const Home = () => {
                 <RegularText style={styles.statsLabell}>Progress: {activeTailors}</RegularText>
               </Card>
               <Card variant="stats" style={styles.statsCard}>
-                <Icon name="account-off-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
+                <Icon name="account-off" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabell}>{t('status.pending')}: {inactiveTailors}</RegularText>
               </Card>
               <Card variant="stats" style={styles.statsCard}>
@@ -894,21 +894,21 @@ const Home = () => {
             <TitleText style={[styles.sectionHeading, { marginTop: 8 }]}>{t('customer.customers')}</TitleText>
             <View style={styles.orderStatsGrid}>
               <Card variant="stats" style={styles.orderStatsCard}>
-                <Icon name="account-clock-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
+                <Icon name="account-clock" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabel}>Progress: {activeCustomers}</RegularText>
               </Card>
               <Card variant="stats" style={styles.orderStatsCard}>
-                <Icon name="account-check-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
+                <Icon name="account-check" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabel}>{t('status.delivered')}: {deliveredCustomers}</RegularText>
               </Card>
             </View>
             <View style={styles.orderStatsGrid}>
               <Card variant="stats" style={styles.orderStatsCard}>
-                <Icon name="account-cancel-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
+                <Icon name="account-cancel" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabel}>{t('status.pending')}: {pendingCustomers}</RegularText>
               </Card>
               <Card variant="stats" style={styles.orderStatsCard}>
-                <Icon name="account-multiple-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
+                <Icon name="account-multiple" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabel}>{t('common.total') || 'Total'}: {totalCustomers}</RegularText>
               </Card>
             </View>
@@ -916,11 +916,11 @@ const Home = () => {
             <TitleText style={[styles.sectionHeading, { marginTop: 8 }]}>{t('order.orders')}</TitleText>
             <View style={styles.orderStatsGrid}>
               <Card variant="stats" style={styles.orderStatsCard}>
-                <Icon name="clipboard-list-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
+                <Icon name="clipboard-list" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabel}>{t('order.total')}: {shopStats?.totalOrders ?? '0'}</RegularText>
               </Card>
               <Card variant="stats" style={styles.orderStatsCard}>
-                <Icon name="clipboard-clock-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
+                <Icon name="clipboard-clock" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabel}>{t('order.activeOrders')}: {shopStats?.totalActiveOrders ?? '0'}</RegularText>
               </Card>
             </View>
@@ -930,7 +930,7 @@ const Home = () => {
                 <RegularText style={styles.statsLabel}>{t('order.pendingOrders')}: {shopStats?.pendingOrders ?? '0'}</RegularText>
               </Card>
               <Card variant="stats" style={styles.orderStatsCard}>
-                <Icon name="check-circle-outline" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
+                <Icon name="check-circle" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
                 <RegularText style={styles.statsLabel}>{t('order.completedOrders')}: {shopStats?.deliveredOrders ?? '0'}</RegularText>
               </Card>
             </View>
@@ -1209,7 +1209,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 9,
-    width: '50%',
+    flex: 1,
+    marginBottom: 8,
   },
   legendDot: {
     width: 10,
@@ -1219,6 +1220,9 @@ const styles = StyleSheet.create({
   legendText: {
     color: colors.textPrimary,
     fontSize: 12,
+    lineHeight: 16,
+    textAlignVertical: 'center',
+    flexShrink: 0,
   },
   pieRow: {
     flexDirection: 'row',
@@ -1234,9 +1238,10 @@ const styles = StyleSheet.create({
   },
   pieLegendCol: {
     flex: 1,
-    justifyContent: 'center',
-    // gap: 10,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
     paddingLeft: 10,
+    paddingTop: 10,
   },
   notAuthenticatedContainer: {
     flex: 1,

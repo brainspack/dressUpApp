@@ -190,7 +190,7 @@ const MainNavigator = () => {
         options={{
           tabBarLabel: t('order.home'),
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
-            <Icon name={focused ? 'home' : 'home-outline'} size={size} color={color} />
+            <Icon name="home" size={size} color={color} />
           ),
         }}
       />
@@ -201,7 +201,7 @@ const MainNavigator = () => {
           headerShown: false,
           tabBarLabel: t('order.customers'),
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
-            <Icon name={focused ? 'account-group' : 'account-group-outline'} size={size} color={color} />
+            <Icon name="account-group" size={size} color={color} />
           ),
         }}
         listeners={({ navigation }) => ({
@@ -235,7 +235,7 @@ const MainNavigator = () => {
           headerShown: false,
           tabBarLabel: t('order.orders'),
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
-            <Icon name={focused ? 'clipboard-list' : 'clipboard-list-outline'} size={size} color={color} />
+            <Icon name="clipboard-list" size={size} color={color} />
           ),
         }}
         listeners={({ navigation }) => ({
@@ -251,7 +251,7 @@ const MainNavigator = () => {
         options={{
           tabBarLabel: t('order.profile'),
           tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
-            <Icon name={focused ? 'account' : 'account-outline'} size={size} color={color} />
+            <Icon name="account" size={size} color={color} />
           ),
         }}
       />

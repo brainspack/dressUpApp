@@ -173,7 +173,7 @@ const TailorDetails = () => {
   if (!tailor) {
     return (
       <View style={styles.errorContainer}>
-        <Icon name="error-outline" size={64} color={colors.danger} />
+        <Icon name="error" size={64} color={colors.danger} />
         <TitleText style={styles.errorTitle}>Tailor Not Found</TitleText>
         <RegularText style={styles.errorText}>The tailor you're looking for doesn't exist or has been deleted.</RegularText>
         <Button
@@ -222,7 +222,7 @@ const TailorDetails = () => {
         <View style={styles.sectionHeader}>
           <TitleText style={styles.sectionTitle}>Contact Information</TitleText>
           <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-            <Icon name="delete-outline" size={24} color="#ef4444" />
+            <Icon name="delete" size={24} color="#ef4444" />
           </TouchableOpacity>
         </View>
 

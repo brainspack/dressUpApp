@@ -1,5 +1,7 @@
 import { Platform } from 'react-native';
-import { Order, OrderItem } from '../types/order';
+// Ensure __DEV__ is known to TypeScript in environments where it's not declared by RN types
+declare const __DEV__: boolean;
+import { Order } from '../types/order';
 
 // For Android emulator, use 10.0.2.2 to access host machine for iOS simulator, use localhost
 // For physical devices, use your computer's IP address
@@ -58,9 +60,22 @@ export interface CustomerResponse {
 class ApiService {
   private baseUrl: string;
   private accessToken: string | null = null;
+  private offlineCallback: (() => void) | null = null;
 
   constructor(baseUrl: string = API_BASE_URL) {
     this.baseUrl = baseUrl;
+  }
+
+  setOfflineCallback(callback: (() => void) | null) {
+    this.offlineCallback = callback;
+  }
+
+  // Manual method to trigger offline detection (for testing)
+  triggerOfflineDetection() {
+    if (this.offlineCallback) {
+      console.log('🚀 API: Manually triggering offline detection');
+      this.offlineCallback();
+    }
   }
 
   setAccessToken(token: string | null) {
@@ -75,17 +90,18 @@ class ApiService {
     // For Android, try multiple URLs if the first one fails
     const urlsToTry = Platform.OS === 'android' && __DEV__ 
       ? [
-          `http://192.168.29.79:3001${endpoint}`,  // Primary URL (actual IP)
-          `${this.baseUrl}${endpoint}`,  // Fallback to 10.0.2.2
-          `http://localhost:3001${endpoint}`  // Last resort
+          `${this.baseUrl}${endpoint}`,  // Primary: 10.0.2.2 (Android emulator standard)
+          `http://192.168.29.79:3001${endpoint}`,  // Fallback: actual machine IP
+          `http://localhost:3001${endpoint}`,  // Last resort: localhost
+          `http://127.0.0.1:3001${endpoint}`  // Final fallback: loopback
         ]
       : [`${this.baseUrl}${endpoint}`];
 
     let lastError: Error | null = null;
 
     for (const url of urlsToTry) {
-      console.log('Making API request to:', url);
-      console.log('Access token available:', !!this.accessToken);
+      console.log(`🚀 API: Attempting request to: ${url}`);
+      
       if (this.accessToken) {
         console.log('Token starts with:', this.accessToken.substring(0, 20) + '...');
       }
@@ -124,10 +140,11 @@ class ApiService {
         }
         
         const data = await response.json();
+        console.log(`🚀 API: Successfully connected to: ${url}`);
         return data;
       } catch (error) {
-        console.error(`API request failed for ${url}:`, error);
-        console.error('🚀 API: Error details:', {
+        console.warn(`API request failed for ${url}:`, error);
+        console.warn('🚀 API: Error details:', {
           message: (error as Error).message,
           name: (error as Error).name,
           stack: (error as Error).stack?.substring(0, 200)
@@ -136,26 +153,41 @@ class ApiService {
         
         // If this is not the last URL to try, continue to the next one
         if (url !== urlsToTry[urlsToTry.length - 1]) {
-          console.log(`Trying next URL...`);
+          console.log(`🚀 API: Trying next URL... (${urlsToTry.indexOf(url) + 2}/${urlsToTry.length})`);
           continue;
         }
       }
     }
 
-    // If all URLs failed, throw the last error
+    // Trigger offline callback if all requests failed (any network-related error)
+    if (lastError && (
+      (lastError instanceof TypeError && (
+        lastError.message.includes('Network request failed') ||
+        lastError.message.includes('fetch') ||
+        lastError.message.includes('connection') ||
+        lastError.message.includes('timeout')
+      )) ||
+      lastError.message.includes('Failed to fetch') ||
+      lastError.message.includes('NetworkError') ||
+      lastError.message.includes('AbortError')
+    )) {
+      if (this.offlineCallback) {
+        console.log('🚀 API: All requests failed, triggering offline callback. Error:', lastError.message);
+        this.offlineCallback();
+      }
+    }
+    
+    // If all URLs failed, throw the last error with helpful information
     if (lastError instanceof TypeError && lastError.message.includes('Network request failed')) {
-      throw new Error('Network connection failed. Please check your internet connection and ensure the backend server is running.');
+      const triedUrls = urlsToTry.map(url => `• ${url}`).join('\n');
+      throw new Error(`Network connection failed after trying ${urlsToTry.length} URLs:\n${triedUrls}\n\nPlease ensure:\n1. Backend server is running on port 3001\n2. Android emulator can access your machine's network\n3. Firewall allows connections on port 3001`);
     }
     throw lastError || new Error('All API endpoints failed');
   }
 
   // Send OTP to mobile number
   async sendOtp(mobileNumber: string): Promise<OtpResponse> {
-    console.log('🚀 [API] sendOtp called with mobileNumber:', mobileNumber);
-    console.log('🚀 [API] Current baseUrl:', this.baseUrl);
-    console.log('🚀 [API] Platform.OS:', Platform.OS);
-    console.log('🚀 [API] __DEV__:', __DEV__);
-    
+         
     try {
       const result = await this.request<OtpResponse>('/auth/send-otp', {
         method: 'POST',
@@ -516,6 +548,7 @@ class ApiService {
     success: boolean;
     profileImageUrl?: string;
     fileKey?: string;
+    s3Url?: string;
     error?: string;
   }> {
     try {
@@ -533,7 +566,7 @@ class ApiService {
         fileName: fileName,
         fileType: fileType,
         imageUri: imageUri.substring(0, 50) + '...',
-        formDataKeys: Object.keys(formData)
+        formDataKeys: Object.keys(formData as any)
       });
       
       // 2. Upload directly to backend
@@ -555,12 +588,13 @@ class ApiService {
       }
 
       // Create backend serving URL for the profile image
-      const backendImageUrl = `http://192.168.29.79:3001/users/profile/image/${encodeURIComponent(uploadResponse.fileKey)}`;
+      const backendImageKey = uploadResponse.fileKey ?? '';
+      const backendImageUrl = `http://192.168.29.79:3001/users/profile/image/${encodeURIComponent(backendImageKey)}`;
       
       return {
         success: true,
         profileImageUrl: backendImageUrl,
-        fileKey: uploadResponse.fileKey,
+        fileKey: uploadResponse.fileKey ?? undefined,
         s3Url: uploadResponse.publicUrl
       };
       

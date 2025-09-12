@@ -13,10 +13,11 @@ import { I18nextProvider } from 'react-i18next';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import i18n from './src/i18n/config';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
-import { ActivityIndicator, View, Text } from 'react-native';
+import {  View, Text, Platform } from 'react-native';
 import apiService from './src/services/api';
 import { useTranslation } from 'react-i18next';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import OfflineGate from './src/components/OfflineGate';
 
 // Import screens
 import SplashScreen from './src/screens/SplashScreen/SplashScreen';
@@ -35,14 +36,14 @@ import OrderSummary from './src/screens/Order/OrderSummary';
 import Login from './src/screens/Auth/Login';
 import Register from './src/screens/Auth/Register';
 import ProfileScreen from './src/screens/Profile/ProfileScreen';
-import Tailors from './src/screens/Tailors';
+// import Tailors from './src/screens/Tailors';
 import TailorList from './src/screens/Tailor/TailorList';
 import TailorDetails from './src/screens/Tailor/TailorDetails';
 import AddTailor from './src/screens/Tailor/AddTailor';
 import EditTailor from './src/screens/Tailor/EditTailor';
 
 // Import icons
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const Tab = createBottomTabNavigator();
@@ -57,13 +58,13 @@ const getTabBarIcon = (route: any, color: string, size: number) => {
   if (route.name === 'Home') {
     iconName = 'home';
   } else if (route.name === 'Customers') {
-    iconName = 'people';
+    iconName = 'account-group';
   } else if (route.name === 'Tailors') {
-    iconName = 'content-cut';
+    iconName = 'scissors-cutting';
   } else if (route.name === 'Orders') {
-    iconName = 'list';
+    iconName = 'clipboard-list';
   } else if (route.name === 'Account') {
-    iconName = 'account-circle';
+    iconName = 'account';
   }
   // Use theme color for Profile/Account tab
   const iconColor = route.name === 'Account' ? '#2DBE91' : color;
@@ -86,7 +87,7 @@ function OrderStackNavigator() {
           title: '',
           headerLeft: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="list" size={30} color="#111827" />
+              <Icon name="clipboard-list" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('order.orders')}</Text>
             </View>
           ),
@@ -95,10 +96,10 @@ function OrderStackNavigator() {
       <OrderStack.Screen
         name="OrderDetails"
         component={OrderDetails}
-        options={({ navigation }) => ({
+        options={({  }) => ({
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="receipt-long" size={30} color="#111827" />
+              <Icon name="receipt" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('order.orderDetails')}</Text>
             </View>
           ),
@@ -111,7 +112,7 @@ function OrderStackNavigator() {
         options={({ navigation }) => ({
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="add-shopping-cart" size={30} color="#111827" />
+              <Icon name="plus-circle" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>Create Order</Text>
             </View>
           ),
@@ -147,7 +148,7 @@ function CustomerStackNavigator() {
           title: '',
           headerLeft: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' ,marginLeft: 10}}>
-              <Icon name="groups" size={30} color="#111827" />
+              <Icon name="account-group" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('customer.customers')}</Text>
             </View>
           ),
@@ -159,7 +160,7 @@ function CustomerStackNavigator() {
         options={({ navigation }) => ({
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="person" size={30} color="#111827" />
+              <Icon name="account" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('customer.customerDetails')}</Text>
             </View>
           ),
@@ -173,7 +174,7 @@ function CustomerStackNavigator() {
         options={({ navigation }) => ({
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="person-add-alt" size={30} color="#111827" />
+              <Icon name="account-plus" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('customer.addCustomer')}</Text>
             </View>
           ),
@@ -186,7 +187,7 @@ function CustomerStackNavigator() {
         options={({ navigation }) => ({
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="edit" size={30} color="#111827" />
+              <Icon name="pencil" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('customer.editCustomer')}</Text>
             </View>
           ),
@@ -211,7 +212,7 @@ function TailorStackNavigator() {
           title: '',
           headerLeft: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="content-cut" size={30} color="#111827" />
+              <Icon name="scissors-cutting" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>Tailors</Text>
             </View>
           ),
@@ -223,7 +224,7 @@ function TailorStackNavigator() {
         options={({ navigation }) => ({
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="content-cut" size={30} color="#111827" />
+              <Icon name="scissors-cutting" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>Tailor Details</Text>
             </View>
           ),
@@ -236,7 +237,7 @@ function TailorStackNavigator() {
         options={({ navigation }) => ({
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="content-cut" size={30} color="#111827" />
+              <Icon name="scissors-cutting" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>Add Tailor</Text>
             </View>
           ),
@@ -249,7 +250,7 @@ function TailorStackNavigator() {
         options={({ navigation }) => ({
           headerTitle: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="content-cut" size={30} color="#111827" />
+              <Icon name="scissors-cutting" size={30} color="#111827" />
               <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>Edit Tailor</Text>
             </View>
           ),
@@ -309,6 +310,7 @@ function AppInner(): React.JSX.Element {
   const [showSplash, setShowSplash] = React.useState(true);
   const [showGetStarted, setShowGetStarted] = React.useState(false);
 
+
   // Debug logging
   React.useEffect(() => {
     console.log('AppInner: State changed - isAuthenticated:', isAuthenticated, 'showGetStarted:', showGetStarted);
@@ -333,6 +335,7 @@ function AppInner(): React.JSX.Element {
 
   return (
     <I18nextProvider i18n={i18n}>
+      <OfflineGate>
       <NavigationContainer>
         {loading || showSplash ? (
           <SplashScreen />
@@ -347,6 +350,7 @@ function AppInner(): React.JSX.Element {
           <AuthStackWithContext />
         )}
       </NavigationContainer>
+      </OfflineGate>
     </I18nextProvider>
   );
 }

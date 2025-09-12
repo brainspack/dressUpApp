@@ -111,7 +111,7 @@ const EditTailor = () => {
   if (!tailor) {
     return (
       <View style={styles.errorContainer}>
-        <Icon name="error-outline" size={64} color={colors.danger} />
+        <Icon name="error" size={64} color={colors.danger} />
         <TitleText style={styles.errorTitle}>Tailor Not Found</TitleText>
         <RegularText style={styles.errorText}>The tailor you're trying to edit doesn't exist or has been deleted.</RegularText>
         <Button

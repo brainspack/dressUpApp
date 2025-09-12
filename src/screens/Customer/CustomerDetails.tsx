@@ -104,7 +104,7 @@ const CustomerDetails = () => {
   if (!customer) {
     return (
       <View style={styles.errorContainer}>
-        <Icon name="error-outline" size={64} color={colors.danger} />
+        <Icon name="error" size={64} color={colors.danger} />
         <TitleText style={styles.errorTitle}>Customer Not Found</TitleText>
         <RegularText style={styles.errorText}>The customer you're looking for doesn't exist or has been deleted.</RegularText>
         <Button
@@ -142,7 +142,7 @@ const CustomerDetails = () => {
         <View style={styles.sectionHeader}>
           <TitleText style={styles.sectionTitle}>Contact Information</TitleText>
           <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-            <Icon name="delete-outline" size={24} color="#ef4444" />
+            <Icon name="delete" size={24} color="#ef4444" />
           </TouchableOpacity>
         </View>
 

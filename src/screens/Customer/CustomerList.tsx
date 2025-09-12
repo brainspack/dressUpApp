@@ -172,7 +172,7 @@ const CustomerList = () => {
           style={{ width: 96, borderRadius: 8 }}
         />
         {/* <TouchableOpacity onPress={() => onDelete(item.id)} style={styles.deleteIconBtn}>
-          <Icon name="delete-outline" size={22} color="#ef4444" />
+          <Icon name="delete" size={22} color="#ef4444" />
         </TouchableOpacity> */}
       </View>
     </View>
