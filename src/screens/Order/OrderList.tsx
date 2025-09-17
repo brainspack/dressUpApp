@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Modal, TextInput, Animated, PanResponder, Alert, Platform } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Modal, TextInput, Alert, StyleSheet } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { OrderStackParamList } from '../../navigation/types';
 import { OrderStatus } from '../../types/order';
 import { useTranslation } from 'react-i18next';
 import apiService from '../../services/api';
-import { UserPlus, Calendar, Package, Settings } from 'lucide-react-native';
+import { UserPlus, Calendar, Package } from 'lucide-react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
@@ -66,7 +66,7 @@ const getStatusColor = (status: OrderStatus) => {
   }
 };
 
-const getStatusTextColor = (status: OrderStatus) => {
+  const getStatusTextColor = (_status: OrderStatus) => {
   // All text will be white for better contrast
   return '#FFFFFF';
 };
@@ -88,9 +88,9 @@ const formatStatus = (status: OrderStatus) => {
 
 const OrderList = () => {
   const navigation = useNavigation<OrderListScreenNavigationProp>();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { accessToken, loading: authLoading } = useAuth();
-  const [orders, setOrders] = useState<OrderApi[]>([]);
+  const [_orders, setOrders] = useState<OrderApi[]>([]);
   const [allOrders, setAllOrders] = useState<OrderApi[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,25 +104,13 @@ const OrderList = () => {
   const [tailors, setTailors] = useState<any[]>([]);
   const [tailorDropdownVisible, setTailorDropdownVisible] = useState(false);
 
-  useEffect(() => {
-    if (!accessToken || authLoading) return;
-    fetchOrders();
-  }, [accessToken, authLoading]);
+  // Move below fetchOrders to avoid "used before declaration" warnings
 
 
 
-  useFocusEffect(
-    React.useCallback(() => {
-      if (!accessToken || authLoading) return;
-      fetchOrders();
-    }, [accessToken, authLoading])
-  );
+  // moved below fetchOrders
 
-  // Refetch orders when status changes
-  useEffect(() => {
-    if (!accessToken || authLoading) return;
-    fetchOrders();
-  }, [selectedStatus]);
+  // Refetch handled by fetchOrders dependency changes
 
   const populateTailorNames = async (orders: OrderApi[]): Promise<OrderApi[]> => {
     try {
@@ -179,7 +167,8 @@ const OrderList = () => {
     }
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
+    if (!accessToken || authLoading) return;
     try {
       console.log('[OrderList] Starting fetchOrders...');
       const shopId = decodeShopIdFromJwt(accessToken);
@@ -242,13 +231,10 @@ const OrderList = () => {
       // Remove deleted orders
       console.log('[OrderList] Before deletedAt filtering:', filtered.length);
       filtered = filtered.filter(o => !(o as any).deletedAt);
-      console.log('[OrderList] After deletedAt filtering:', filtered.length);
 
-      console.log('[OrderList] Final filtered orders:', filtered);
-      
       // Populate tailor names for assigned orders
       const ordersWithTailorNames = await populateTailorNames(filtered);
-      
+
       setAllOrders(ordersWithTailorNames);
       setOrders(ordersWithTailorNames);
     } catch (error) {
@@ -258,14 +244,24 @@ const OrderList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessToken, authLoading, selectedStatus]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchOrders();
+    }, [fetchOrders])
+  );
 
   const filterOrders = (query: string) => {
     if (!query.trim()) {
       setOrders(allOrders);
       return;
     }
-    
+
     const filtered = allOrders.filter(order =>
       order.customerName?.toLowerCase().includes(query.toLowerCase()) ||
       String(order.serialNumber).includes(query) ||
@@ -444,7 +440,7 @@ const OrderList = () => {
 
   const handleCancelAssign = async (order: OrderApi) => {
     try {
-      const unassigned = await apiService.unassignOrder(order.id);
+      await apiService.unassignOrder(order.id);
       const updated = allOrders.map(o => 
         o.id === order.id ? { ...o, assignedTo: null, assignedAt: null, tailorName: null } : o
       );
@@ -508,7 +504,7 @@ const OrderList = () => {
           <TouchableOpacity
             onPress={() => navigation.navigate('OrderDetails', { orderId: item.id })}
             activeOpacity={0.8}
-            style={{ flex: 1 }}
+            style={localStyles.flex1}
           >
             <View style={styles.orderHeader}>
               <View style={styles.orderIdContainer}>
@@ -528,28 +524,27 @@ const OrderList = () => {
                   </RegularText>
                 </View>
             </View>
-            
+
             {!!item.customerName && (
               <View style={styles.customerInfo}>
                 <UserPlus size={14} color={colors.textSecondary} style={styles.customerIcon} />
                 <RegularText style={styles.customerName}>{item.customerName}</RegularText>
               </View>
             )}
-            
             <View style={styles.dateInfo}>
               <Calendar size={14} color={colors.textSecondary} style={styles.dateIcon} />
               <RegularText style={styles.orderDate}>
                 {t('order.ordered')}: {new Date(item.createdAt).toLocaleDateString()}
               </RegularText>
             </View>
-            
+
             <View style={styles.dateInfo}>
               <Calendar size={14} color={colors.textSecondary} style={styles.dateIcon} />
               <RegularText style={styles.deliveryDate}>
                 {t('order.delivery')}: {item.deliveryDate ? new Date(item.deliveryDate).toLocaleDateString() : 'Not set'}
               </RegularText>
             </View>
-            
+
             {displayItems.length > 0 && (
               <View style={styles.itemsContainer}>
                 {displayItems.map((orderItem) => (
@@ -562,7 +557,7 @@ const OrderList = () => {
                 ))}
               </View>
             )}
-            
+
             <View style={styles.totalContainer}>
               <RegularText style={styles.totalAmount}>
                 {t('order.total')}: ₹{total}
@@ -573,7 +568,7 @@ const OrderList = () => {
             </View>
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.actionButtons}>
           {activeTab === 'notAssigned' ? (
             <View style={styles.assignButtonContainer}>
@@ -584,7 +579,7 @@ const OrderList = () => {
                 gradientColors={[colors.brand, colors.brandDark, colors.blueDark]}
                 icon={<UserPlus size={14} color="#fff" />}
                 onPress={() => handleAssignOrder(item)}
-                style={{ width: 90, borderRadius: 8 }}
+                style={localStyles.smallButton}
               />
             </View>
           ) : (
@@ -595,7 +590,7 @@ const OrderList = () => {
                 height={34}
                 gradientColors={[colors.danger, '#d12a2a', '#8a1d1d']}
                 onPress={() => handleCancelAssign(item)}
-                style={{ width: 90, borderRadius: 8 }}
+                style={localStyles.smallButton}
               />
             </View>
           )}
@@ -607,7 +602,6 @@ const OrderList = () => {
 
   return (
     <View style={styles.container}>
-     
 
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
@@ -658,7 +652,7 @@ const OrderList = () => {
         </TouchableOpacity>
 
         <View style={styles.totalInline}>
-          <Text style={[styles.totalInlineText, { alignSelf: 'flex-end' }]}>
+          <Text style={[styles.totalInlineText, localStyles.alignEnd]}>
             {`${t('order.orders')}: ${filteredOrders.length}`}
           </Text>
         </View>
@@ -808,3 +802,8 @@ const OrderList = () => {
 
 
 export default OrderList; 
+const localStyles = StyleSheet.create({
+  flex1: { flex: 1 },
+  smallButton: { width: 90, borderRadius: 8 },
+  alignEnd: { alignSelf: 'flex-end' },
+});

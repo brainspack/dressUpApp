@@ -1,5 +1,6 @@
+/* eslint-disable curly, no-trailing-spaces, no-bitwise */
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, Image, Alert } from 'react-native';
+import { View,  FlatList, TouchableOpacity, TextInput, Image, Alert, StyleSheet } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { OrderStackParamList } from '../../navigation/types';
@@ -48,7 +49,7 @@ const formatOutfitLabel = (raw: string): string => {
     'tshirt': 'T-Shirt',
   };
   const withoutCount = (raw || '').replace(/\s*\(\d+\)\s*$/, ''); // e.g., "shirt (1)" -> "shirt"
-  if (map[withoutCount]) return map[withoutCount];
+  if (map[withoutCount]) { return map[withoutCount]; }
   const withSpaces = withoutCount.replace(/_/g, ' ').replace(/\s{2,}/g, ' ').trim();
   const normalized = withSpaces.replace(/\bco ord set\b/i, 'Co-ord Set');
   return normalized
@@ -58,228 +59,233 @@ const formatOutfitLabel = (raw: string): string => {
 };
 
 // Custom SVG Icons for each outfit type
+const localStyles = StyleSheet.create({
+  iconImage: { width: 50, height: 50, resizeMode: 'contain' },
+  spacer24: { width: 24 },
+});
+
 const OutfitIcons = {
   // Traditional Indian Wear - Female
   saree: (
     <Image 
       source={require('../../assets/saree.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   kurti: (
     <Image 
       source={require('../../assets/kurti.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   camisole: (
     <Image 
       source={require('../../assets/camisole.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   ethnic_jacket: (
     <Image 
       source={require('../../assets/ethnic_jacket.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   jacket: (
     <Image 
       source={require('../../assets/jacket.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   nighty: (
     <Image 
       source={require('../../assets/nighty.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   slip: (
     <Image 
       source={require('../../assets/slip.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   skirt: (
     <Image 
       source={require('../../assets/skirt.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   shrug: (
     <Image 
       source={require('../../assets/shrug.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   cape: (
     <Image 
       source={require('../../assets/cape.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   top: (
     <Image 
       source={require('../../assets/top.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   women_western_suit: (
     <Image 
       source={require('../../assets/women_western_suit.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   jumpsuit: (
     <Image 
       source={require('../../assets/jumpsuit.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   kaftan: (
     <Image 
       source={require('../../assets/kaftan.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   women_blazer: (
     <Image 
       source={require('../../assets/women_blazer.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   women_co_ord_set: (
     <Image 
       source={require('../../assets/women_co_ord_set.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   sharara: (
     <Image 
       source={require('../../assets/sharara.jpg')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   lehenga: (
     <Image 
       source={require('../../assets/lehenga.jpg')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   underskirt: (
     <Image 
       source={require('../../assets/underskirt.jpg')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   womenssuit: (
     <Image 
       source={require('../../assets/womenssuit.jpg')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   gown: (
     <Image 
       source={require('../../assets/gown.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   sareeBlouse: (
     <Image 
       source={require('../../assets/saree+blouse.jpg')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   dress: (
     <Image 
       source={require('../../assets/dress.jpg')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   coOrdSet: (
     <Image 
       source={require('../../assets/co_ord_set.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   tshirt: (
     <Image 
       source={require('../../assets/tshirt.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   dhoti: (
     <Image 
       source={require('../../assets/dhoti.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   pajama: (
     <Image 
       source={require('../../assets/pajama.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   kurta: (
     <Image 
       source={require('../../assets/kurta.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   blazer: (
     <Image 
       source={require('../../assets/blazer.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   indoWestern: (
     <Image 
       source={require('../../assets/indo_western.jpg')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   sherwani: (
     <Image 
       source={require('../../assets/sherwani.jpg')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   waistcost: (
     <Image 
       source={require('../../assets/waistcost.jpg')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   nehrujacket: (
     <Image 
       source={require('../../assets/nehrujacket.jpg')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   shirt1: (
     <Image 
       source={require('../../assets/shirt (1).jpg')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   pants: (
     <Image 
       source={require('../../assets/pants.jpg')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   kurtaPajama: (
     <Image 
       source={require('../../assets/kurta_pajama.png')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
   shirt: (
     <Image 
       source={require('../../assets/shirt.jpg')} 
-      style={{ width: 50, height: 50, resizeMode: 'contain' }}
+      style={localStyles.iconImage}
     />
   ),
 };
@@ -333,7 +339,7 @@ const OutfitSelectionScreen = () => {
   const { t } = useTranslation();
   
   const [selectedGender, setSelectedGender] = useState<'female' | 'male'>('female');
-  const [outfitSearchQuery, setOutfitSearchQuery] = useState('');
+  const [outfitSearchQuery] = useState('');
   const [customerNameInput, setCustomerNameInput] = useState(route.params?.customerName || '');
   const [customerCode, setCustomerCode] = useState<string>('');
   
@@ -347,7 +353,7 @@ const OutfitSelectionScreen = () => {
     const ensureCustomerCode = async () => {
       try {
         const cid = route.params?.customerId;
-        if (!cid) return;
+        if (!cid) { return; }
         // Prefer mobile number from API if available
         try {
           const customer = await apiService.getCustomerById(cid);
@@ -474,7 +480,7 @@ const OutfitSelectionScreen = () => {
       'shirt (1)': require('../../assets/shirt (1).jpg'),
       pants: require('../../assets/pants.jpg'),
       kurta_pajama: require('../../assets/kurta_pajama.png'),
-      shirt: require('../../assets/shirt.jpg')
+      shirt: require('../../assets/shirt.jpg'),
     };
     const key = (outfitName || '').replace(/\s*\(\d+\)\s*$/, '');
     const imageSource = outfitImageMap[key];
@@ -497,8 +503,8 @@ const OutfitSelectionScreen = () => {
   };
 
   // Render outfit item for the grid layout
-  const renderOutfitItem = ({ item, index }: { item: OutfitType; index: number }) => {
-    const outfits = getOutfitsToShow();
+  const renderOutfitItem = ({ item }: { item: OutfitType; index: number }) => {
+    // const outfits = getOutfitsToShow();
     
     return (
       <TouchableOpacity 
@@ -528,7 +534,7 @@ const OutfitSelectionScreen = () => {
           <Icon name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <TitleText style={styles.headerTitle}>{t('order.createOrder')}</TitleText>
-        <View style={{ width: 24 }} />
+        <View style={localStyles.spacer24} />
       </View>
 
       {/* Customer Info Card - Conditional based on route params */}
