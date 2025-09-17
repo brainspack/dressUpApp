@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import colors from '../../../constants/colors';
 
 export const styles = StyleSheet.create({
@@ -12,11 +12,13 @@ export const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingTop: Platform.select({ ios: 50, android: 41 }) as number,
+    paddingBottom: Platform.select({ ios: 8, android: 12 }) as number,
     backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   backButton: {
     padding: 8,
@@ -25,6 +27,7 @@ export const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: colors.textPrimary,
+    marginBottom: 2,
   },
   placeholder: {
     width: 40,
@@ -212,6 +215,9 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+  },
+  roundedButton: {
+    borderRadius: 12,
   },
   addOutfitButtonGradient: {
     flexDirection: 'row',

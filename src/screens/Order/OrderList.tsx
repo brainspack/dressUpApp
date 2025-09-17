@@ -314,25 +314,20 @@ const OrderList = () => {
       console.log(`[OrderList] Using alteration price for order ${order.id}: ₹${order.alterationPrice}`);
       return order.alterationPrice;
     }
-    
     // First try to get total from stored totalAmount
     if (typeof order.totalAmount === 'number' && order.totalAmount > 0) return order.totalAmount;
-    
     // Calculate from items if available
     const items = getDisplayItems(order);
     const itemsSum = items.reduce((acc, it) => acc + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0);
     if (itemsSum > 0) return itemsSum;
-    
     // Calculate from clothes with price field (preferred)
     if (order.clothes && order.clothes.length > 0) {
       const clothesSum = order.clothes.reduce((acc, c) => acc + (Number(c.price) || 0), 0);
       if (clothesSum > 0) return clothesSum;
-      
       // Fallback to materialCost if price is not available
       const materialSum = order.clothes.reduce((acc, c) => acc + (Number(c.materialCost) || 0), 0);
       if (materialSum > 0) return materialSum;
     }
-    
     return 0;
   };
 

@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import colors from '../../../constants/colors';
 
 export const styles = StyleSheet.create({
@@ -11,8 +11,8 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingTop: Platform.select({ ios: 50, android: 41 }) as number,
+    paddingBottom: Platform.select({ ios: 8, android: 12 }) as number,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
@@ -24,6 +24,7 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#111827',
     fontStyle: 'normal',
+    marginBottom: 2,
   },
   customerInfoCard: {
     flexDirection: 'row',
@@ -31,7 +32,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
     borderRadius: 12,
     padding: 16,
-    margin: 20,
+    margin: 12,
     borderWidth: 1,
     borderColor: '#e5e7eb',
   },

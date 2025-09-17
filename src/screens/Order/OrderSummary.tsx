@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, TouchableOpacity, Image, Alert, TextInput } from 'react-native';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,7 +11,6 @@ import Button from '../../components/Button';
 import apiService from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { styles } from './styles/OrderSummaryStyles';
-
 type OrderSummaryScreenNavigationProp = NativeStackNavigationProp<OrderStackParamList, 'OrderSummary'>;
 type OrderSummaryScreenRouteProp = RouteProp<OrderStackParamList, 'OrderSummary'>;
 
@@ -22,16 +21,10 @@ interface Customer {
   address?: string;
 }
 
-interface SelectedOutfit {
-  id: string;
-  name: string;
-  type: string;
-  image: any; // Image source from require()
-}
+// Removed unused SelectedOutfit interface
 
 const OrderSummary = () => {
   console.log('OrderSummary component is being rendered!');
-  
   const navigation = useNavigation<OrderSummaryScreenNavigationProp>();
   const route = useRoute<OrderSummaryScreenRouteProp>();
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -39,26 +32,9 @@ const OrderSummary = () => {
   const [localSelectedOutfits, setLocalSelectedOutfits] = useState(route.params?.selectedOutfits || []);
   const [advance, setAdvance] = useState<string>('0');
 
-  const { customerId, shopId, customerName, selectedOutfits: routeOutfits } = route.params;
+  const { customerId, shopId, customerName } = route.params;
 
-  useEffect(() => {
-    console.log('OrderSummary mounted with params:', route.params);
-    console.log('Selected outfits:', localSelectedOutfits);
-    console.log('Customer ID:', customerId);
-    console.log('Shop ID:', shopId);
-    console.log('Customer Name:', customerName);
-    fetchCustomerDetails();
-    checkForUpdatedPrice();
-  }, [customerId]);
-
-  // Check for updated prices when screen comes back into focus
-  useFocusEffect(
-    React.useCallback(() => {
-      checkForUpdatedPrice();
-    }, [])
-  );
-
-  const checkForUpdatedPrice = async () => {
+  const checkForUpdatedPrice = useCallback(async () => {
     try {
       const lastPrice = await AsyncStorage.getItem('lastCalculatedPrice');
       const lastOutfitId = await AsyncStorage.getItem('lastOutfitId');
@@ -66,9 +42,7 @@ const OrderSummary = () => {
       const lastBreakdownRaw = await AsyncStorage.getItem('lastBreakdown');
       let lastBreakdown: any = null;
       try { lastBreakdown = lastBreakdownRaw ? JSON.parse(lastBreakdownRaw) : null; } catch {}
-      
       if ((lastPrice || lastMeasurements) && lastOutfitId) {
-        // Update the outfit with the calculated price using functional updater
         const numericPrice = lastPrice ? parseFloat(lastPrice) : undefined;
         setLocalSelectedOutfits(prev => prev.map(outfit => (
           outfit.id === lastOutfitId
@@ -80,8 +54,6 @@ const OrderSummary = () => {
               }
             : outfit
         )));
-        
-        // Clear the stored data
         await AsyncStorage.removeItem('lastCalculatedPrice');
         await AsyncStorage.removeItem('lastOutfitId');
         await AsyncStorage.removeItem('lastBreakdown');
@@ -89,13 +61,52 @@ const OrderSummary = () => {
           await AsyncStorage.setItem(`ms_${lastOutfitId}`, lastMeasurements);
           await AsyncStorage.removeItem('lastMeasurements');
         }
-        
-        console.log('Updated outfit price:', lastOutfitId, lastPrice);
       }
     } catch (error) {
       console.error('Error checking for updated price:', error);
     }
-  };
+  }, []);
+
+  const fetchCustomerDetails = useCallback(async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching customer details for ID:', customerId);
+      if (!customerId) {
+        setCustomer({
+          id: 'fallback',
+          name: customerName,
+          mobileNumber: 'N/A',
+          address: 'N/A',
+        });
+        setLoading(false);
+        return;
+      }
+      const customerData = await apiService.getCustomerById(customerId);
+      setCustomer(customerData);
+    } catch (error) {
+      console.error('Error fetching customer details:', error);
+      setCustomer({
+        id: customerId || 'fallback',
+        name: customerName,
+        mobileNumber: 'N/A',
+        address: 'N/A',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [customerId, customerName]);
+
+  useEffect(() => {
+    fetchCustomerDetails();
+    checkForUpdatedPrice();
+  }, [fetchCustomerDetails, checkForUpdatedPrice, route.params]);
+
+  // Check for updated prices when screen comes back into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      checkForUpdatedPrice();
+    }, [checkForUpdatedPrice])
+  );
 
   // Get uploaded images from AsyncStorage
   const getUploadedImages = async (outfitType: string) => {
@@ -112,39 +123,7 @@ const OrderSummary = () => {
     return [];
   };
 
-  const fetchCustomerDetails = async () => {
-    try {
-      setLoading(true);
-      console.log('Fetching customer details for ID:', customerId);
-      
-      if (!customerId) {
-        console.log('No customer ID provided, using fallback');
-        setCustomer({
-          id: 'fallback',
-          name: customerName,
-          mobileNumber: 'N/A',
-          address: 'N/A'
-        });
-        setLoading(false);
-        return;
-      }
-
-      const customerData = await apiService.getCustomerById(customerId);
-      console.log('Customer data received:', customerData);
-      setCustomer(customerData);
-    } catch (error) {
-      console.error('Error fetching customer details:', error);
-      // Use route params as fallback
-      setCustomer({
-        id: customerId || 'fallback',
-        name: customerName,
-        mobileNumber: 'N/A',
-        address: 'N/A'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // duplicate fetchCustomerDetails removed (useCallback version above)
 
   const handleSubmit = async () => {
     try {
@@ -183,9 +162,9 @@ const OrderSummary = () => {
       // Create order for each selected outfit
       for (const outfit of localSelectedOutfits) {
         // Calculate delivery date (7 days from now as default)
-        const defaultDeliveryDate = new Date();
+      const defaultDeliveryDate = new Date();
         defaultDeliveryDate.setDate(defaultDeliveryDate.getDate() + 7);
-        
+
         const isAlteration = ((outfit as any)._orderType === 'alteration');
         const itemsTotal = (outfit as any)._itemsTotal != null ? Number((outfit as any)._itemsTotal) : (outfit.price || 0);
         const clothTotal = (outfit as any)._clothTotal != null ? Number((outfit as any)._clothTotal) : 0;
@@ -199,14 +178,14 @@ const OrderSummary = () => {
 
         // Get uploaded images for this outfit type
         const uploadedImages = await getUploadedImages(outfit.type);
-        const processedImageUrls = uploadedImages.map((img: any) => 
+        const processedImageUrls = uploadedImages.map((img: any) =>
           typeof img === 'string' ? img : img.url || img.originalUrl || ''
         ).filter((url: string) => url);
 
         console.log('🚀 OrderSummary: Including uploaded images:', {
           outfitType: outfit.type,
           uploadedImages: uploadedImages,
-          processedImageUrls: processedImageUrls
+          processedImageUrls: processedImageUrls,
         });
 
         const payload = {
@@ -231,13 +210,13 @@ const OrderSummary = () => {
             videoUrls: [],
           }],
           alterationPrice: isAlteration ? Math.max(0, priceToSend - appliedDiscount) : undefined,
-          notes: JSON.stringify({ 
-            notes: (outfit as any)._notesText || '', 
+          notes: JSON.stringify({
+            notes: (outfit as any)._notesText || '',
             clothes: [{
               type: outfit.type,
               price: isAlteration ? Math.max(0, priceToSend - appliedDiscount) : Math.max(0, (priceToSend + materialToSend) - appliedDiscount) - materialToSend,
               materialCost: isAlteration ? 0 : materialToSend,
-              orderType: (isAlteration ? 'alteration' : 'stitching')
+              orderType: (isAlteration ? 'alteration' : 'stitching'),
             }],
             orderType: (isAlteration ? 'alteration' : 'stitching'),
             advanceApplied: appliedDiscount,
@@ -265,7 +244,7 @@ const OrderSummary = () => {
               const pickClothId = (type: string, idx: number): string | undefined => {
                 // Try match by type first; then by index fallback
                 let match = savedClothes.find(sc => sc?.type === type);
-                if (!match && savedClothes[idx]) match = savedClothes[idx];
+                if (!match && savedClothes[idx]) { match = savedClothes[idx]; }
                 console.log('Picked clothId:', match?.id, 'for type:', type, 'at index:', idx);
                 return match?.id;
               };
@@ -322,77 +301,14 @@ const OrderSummary = () => {
 
       Alert.alert('Success', 'Orders created successfully!');
       navigation.navigate('OrderList');
-      
+
     } catch (error) {
       console.error('Failed to create orders:', error);
       Alert.alert('Error', 'Failed to create orders.');
     }
   };
 
-  const handleCreateOrder = () => {
-    try {
-      // 🚀 FIXED: Show order type selection instead of defaulting to stitching
-      Alert.alert(
-        'Select Order Type',
-        'Choose the type of order you want to create:',
-        [
-          {
-            text: 'Stitching',
-            onPress: () => {
-              navigation.navigate('AddOrder', {
-                customerId,
-                shopId,
-                customerName: customer?.name || customerName,
-                outfitType: localSelectedOutfits[0]?.type,
-                gender: localSelectedOutfits[0]?.gender,
-                outfitId: localSelectedOutfits[0]?.id || `${localSelectedOutfits[0]?.type || 'ot'}-0`,
-                orderType: 'stitching'
-              });
-            }
-          },
-          {
-            text: 'Alteration',
-            onPress: () => {
-              // 🚀 FIXED: Direct navigation to AddOrder for alteration (no modal)
-              navigation.navigate('AddOrder', {
-                customerId,
-                shopId,
-                customerName: customer?.name || customerName,
-                outfitType: localSelectedOutfits[0]?.type,
-                gender: localSelectedOutfits[0]?.gender,
-                outfitId: localSelectedOutfits[0]?.id || `${localSelectedOutfits[0]?.type || 'ot'}-0`,
-                orderType: 'alteration'
-              });
-            }
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel'
-          }
-        ]
-      );
-    } catch (error) {
-      console.error('Error navigating to AddOrder:', error);
-      Alert.alert('Error', 'Failed to navigate to order creation');
-    }
-  };
-
-  const handleRemoveOutfit = (outfitId: string) => {
-    Alert.alert(
-      'Remove Outfit',
-      'Are you sure you want to remove this outfit?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Remove', 
-          style: 'destructive',
-          onPress: () => {
-            setLocalSelectedOutfits(prev => prev.filter(o => o.id !== outfitId));
-          }
-        }
-      ]
-    );
-  };
+  // Removed unused helpers (handleCreateOrder, handleRemoveOutfit)
 
   const getInitials = (name: string) => {
     return name
@@ -418,7 +334,7 @@ const OrderSummary = () => {
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
@@ -505,10 +421,10 @@ const OrderSummary = () => {
                 customerId,
                 shopId,
                 customerName: customer?.name || customerName,
-                existingOutfits: localSelectedOutfits // Pass existing outfits so they don't get replaced
+                existingOutfits: localSelectedOutfits, // Pass existing outfits so they don't get replaced
               });
             }}
-            style={{ borderRadius: 12 }}
+            style={styles.roundedButton}
           />
         </View>
 
@@ -550,7 +466,7 @@ const OrderSummary = () => {
           height={56}
           gradientColors={['#229B73', '#1a8f6e', '#000000']}
           onPress={() => handleSubmit()}
-          style={{ borderRadius: 12 }}
+          style={styles.roundedButton}
         />
       </View>
     </View>
