@@ -10,11 +10,12 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+ 
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: 20,
-    paddingTop: Platform.select({ ios: 50, android: 41 }) as number,
+    paddingTop: Platform.select({ ios: 50, android: 35}) as number,
     paddingBottom: Platform.select({ ios: 8, android: 12 }) as number,
     backgroundColor: colors.white,
     borderBottomWidth: 1,
@@ -24,10 +25,11 @@ export const styles = StyleSheet.create({
     padding: 8,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: 'bold',
+    fontStyle: 'normal',
     color: colors.textPrimary,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   placeholder: {
     width: 40,

@@ -4,6 +4,7 @@ import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navig
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { OrderStackParamList } from '../../navigation/types';
 import { RegularText, TitleText } from '../../components/CustomText';
+import { useTranslation } from 'react-i18next';
 import colors from '../../constants/colors';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -29,6 +30,7 @@ const OrderSummary = () => {
   const navigation = useNavigation<OrderSummaryScreenNavigationProp>();
   const route = useRoute<OrderSummaryScreenRouteProp>();
   const { showToast } = useToast();
+  const { t } = useTranslation();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [localSelectedOutfits, setLocalSelectedOutfits] = useState(route.params?.selectedOutfits || []);
@@ -353,7 +355,7 @@ const OrderSummary = () => {
           >
             <Icon name="arrow-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
-          <TitleText style={styles.headerTitle}>Create Order</TitleText>
+          <TitleText style={styles.headerTitle}>{t('order.createOrder', 'Create Order')}</TitleText>
           <View style={styles.placeholder} />
         </View>
 
@@ -383,7 +385,7 @@ const OrderSummary = () => {
 
         {/* Selected Outfits - horizontal chips */}
         <View style={styles.outfitsSection}>
-          <TitleText style={styles.sectionTitle}>Selected Outfits</TitleText>
+          <TitleText style={styles.sectionTitle}>{t('order.selectedOutfits', 'Selected Outfits')}</TitleText>
           {localSelectedOutfits && localSelectedOutfits.length > 0 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {localSelectedOutfits.map((outfit) => (
@@ -422,7 +424,7 @@ const OrderSummary = () => {
             </ScrollView>
           ) : (
             <View style={styles.outfitCard}>
-              <RegularText style={styles.outfitName}>No outfits selected</RegularText>
+              <RegularText style={styles.outfitName}>{t('order.noOutfitsSelected', 'No outfits selected')}</RegularText>
             </View>
           )}
         </View>
@@ -431,7 +433,7 @@ const OrderSummary = () => {
         <View style={styles.addOutfitButton}>
           <Button
             variant="gradient"
-            title="Add Outfit"
+            title={t('order.addOutfit', 'Add Outfit')}
             height={56}
             gradientColors={['#229B73', '#1a8f6e', '#000000']}
             icon={<Icon name="add" size={24} color={colors.white} />}
@@ -450,7 +452,7 @@ const OrderSummary = () => {
         {/* Total Section */}
         <View style={styles.totalSection}>
           <View style={styles.totalRow}>
-            <TitleText style={styles.totalLabel}>Total:</TitleText>
+            <TitleText style={styles.totalLabel}>{t('order.total', 'Total')}:</TitleText>
             <TitleText style={styles.totalAmount}>
               {(() => {
                 const gross = localSelectedOutfits.reduce((total, outfit) => total + (outfit.price || 0), 0);
@@ -460,7 +462,7 @@ const OrderSummary = () => {
             </TitleText>
           </View>
           <View style={styles.discountInput}>
-            <RegularText style={styles.discountLabel}>Advance:</RegularText>
+            <RegularText style={styles.discountLabel}>{t('order.advance', 'Advance')}:</RegularText>
             <View style={styles.discountField}>
               <View style={styles.advanceRow}>
                 <Icon name="currency-rupee" size={16} color={colors.textSecondary} />
@@ -481,7 +483,7 @@ const OrderSummary = () => {
       <View style={styles.bottomContainer}>
         <Button
           variant="gradient"
-          title="Create Order"
+          title={t('order.createOrder', 'Create Order')}
           height={56}
           gradientColors={['#229B73', '#1a8f6e', '#000000']}
           onPress={() => handleSubmit()}
