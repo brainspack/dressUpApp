@@ -208,4 +208,18 @@ export const addCustomerStyles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.6,
   },
+  inputError: {
+    borderColor: '#ef4444',
+    borderWidth: 1,
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  submitButton: {
+    margin: 16,
+    borderRadius: 12,
+  },
 });

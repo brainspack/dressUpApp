@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, ScrollView, Alert, TouchableOpacity, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // import LinearGradient from 'react-native-linear-gradient';
@@ -21,12 +21,12 @@ import { styles } from './styles/OrderDetailsStyles';
 type OrderDetailsScreenNavigationProp = NativeStackNavigationProp<OrderStackParamList, 'OrderDetails'>;
 type OrderDetailsScreenRouteProp = RouteProp<OrderStackParamList, 'OrderDetails'>;
 
-interface OrderItem {
-  id: string;
-  name: string;
-  quantity: number;
-  price: number;
-}
+// interface OrderItem {
+//   id: string;
+//   name: string;
+//   quantity: number;
+//   price: number;
+// }
 
 const OrderDetails = () => {
   const navigation = useNavigation<OrderDetailsScreenNavigationProp>();
@@ -41,40 +41,7 @@ const OrderDetails = () => {
   // We intentionally avoid showing unrelated customer-level measurements
   // unless they are explicitly attached to this order.
 
-  useEffect(() => {
-    console.log('Fetching order details for ID:', route.params?.orderId);
-    fetchOrderDetails();
-  }, [route.params?.orderId]);
-
-  useEffect(() => {
-    if (order?.id) {
-      fetchOrderMeasurements(order.id);
-    }
-  }, [order?.id]);
-
-  // Removed auto-fetching customer measurements to avoid showing data
-  // from other orders when none were added for this order.
-
-  useEffect(() => {
-    if (order?.customerId && (!order.customer || !order.customer.name)) {
-      console.log('Fetching customer details for ID:', order.customerId);
-      fetchCustomerDetails(order.customerId);
-    } else if (order?.customer) {
-      console.log('Setting customer from order:', order.customer);
-      setCustomer(order.customer);
-    }
-  }, [order]);
-
-  const fetchCustomerDetails = async (customerId: string) => {
-    try {
-      const data = await apiService.getCustomerById(customerId);
-      setCustomer(data);
-    } catch (error) {
-      setCustomer(null);
-    }
-  };
-
-  const fetchOrderDetails = async () => {
+  const fetchOrderDetails = useCallback(async () => {
     if (!route.params?.orderId) {
       Alert.alert('Error', 'No order ID provided');
       setLoading(false);
@@ -84,11 +51,11 @@ const OrderDetails = () => {
     console.log('Fetching order details for ID:', route.params.orderId);
 
     const decodeShopIdFromJwt = (token: string | null): string | null => {
-      if (!token) return null;
+      if (!token) { return null; }
       try {
         const part = token.split('.')[1] || '';
         let b64 = part.replace(/-/g, '+').replace(/_/g, '/');
-        while (b64.length % 4) b64 += '=';
+        while (b64.length % 4) { b64 += '='; }
         const json = decodeURIComponent(
           atob(b64)
             .split('')
@@ -148,7 +115,41 @@ const OrderDetails = () => {
     } finally {
       setLoading(false);
     }
+  }, [route.params?.orderId, accessToken, navigation]);
+
+  useEffect(() => {
+    console.log('Fetching order details for ID:', route.params?.orderId);
+    fetchOrderDetails();
+  }, [fetchOrderDetails, route.params?.orderId]);
+
+  useEffect(() => {
+    if (order?.id) {
+      fetchOrderMeasurements(order.id);
+    }
+  }, [order?.id]);
+
+  // Removed auto-fetching customer measurements to avoid showing data
+  // from other orders when none were added for this order.
+
+  useEffect(() => {
+    if (order?.customerId && (!order.customer || !order.customer.name)) {
+      console.log('Fetching customer details for ID:', order.customerId);
+      fetchCustomerDetails(order.customerId);
+    } else if (order?.customer) {
+      console.log('Setting customer from order:', order.customer);
+      setCustomer(order.customer);
+    }
+  }, [order]);
+
+  const fetchCustomerDetails = async (customerId: string) => {
+    try {
+      const data = await apiService.getCustomerById(customerId);
+      setCustomer(data);
+    } catch (error) {
+      setCustomer(null);
+    }
   };
+
 
   const fetchOrderMeasurements = async (orderId: string) => {
     try {
@@ -197,7 +198,7 @@ const OrderDetails = () => {
   };
 
   const sendStatusUpdateSMS = async (status: OrderStatus) => {
-    if (!order?.customer?.phone) return;
+    if (!order?.customer?.phone) { return; }
 
     const statusMessages: Record<OrderStatus, string> = {
       pending: 'Your order has been received and is pending processing.',
@@ -235,13 +236,13 @@ const OrderDetails = () => {
     }
   };
 
-  const getStatusTextColor = (status: OrderStatus) => {
+  const getStatusTextColor = (_status: OrderStatus) => {
     // All text will be white for better contrast
     return '#FFFFFF';
   };
 
   const formatStatus = (status: OrderStatus) => {
-    return status.split('_').map(word => 
+    return status.split('_').map(word =>
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ');
   };
@@ -251,9 +252,9 @@ const OrderDetails = () => {
     return safe.reduce((sum: number, item: any) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0);
   };
 
-  const handleCreateOrder = () => {
-    (navigation as any).navigate('AddOrder');
-  };
+  // const handleCreateOrder = () => {
+  //   (navigation as any).navigate('AddOrder');
+  // };
 
   if (loading) {
     return (
@@ -292,7 +293,7 @@ const OrderDetails = () => {
       } else {
         notesObj = order.notes;
       }
-      
+
       console.log('Parsed notes:', notesObj);
       if (notesObj && typeof notesObj === 'object') {
         if (Array.isArray(notesObj.items)) {
@@ -335,7 +336,7 @@ const OrderDetails = () => {
         name: cloth.type,
         quantity: 1,
         price: finalPrice,
-        notes: cloth.designNotes
+        notes: cloth.designNotes,
       };
     });
     console.log('Items from clothes with prices:', itemsFromClothes);
@@ -343,7 +344,7 @@ const OrderDetails = () => {
 
   // Combine items from all sources, preferring notes items if available
   const displayItemsRaw = itemsFromNotes.length > 0 ? itemsFromNotes : itemsFromClothes;
-  
+
   // 🚀 DEDUPE: Sometimes the same cloth/item can appear twice (e.g., from notes and clothes mapping)
   let displayItems = (() => {
     const seen = new Set<string>();
@@ -372,7 +373,7 @@ const OrderDetails = () => {
     }, []);
     console.log('Final display items (alteration from clothes):', displayItems);
   }
-  
+
   // 🚀 FIXED: Calculate total price based on order type
   // Prefer backend-saved totalAmount; when absent, add BOTH item totals and cloth costs
   const itemsTotalCalc = calculateTotal(displayItems);
@@ -498,7 +499,7 @@ const OrderDetails = () => {
               cacheImages = Array.isArray(snap?.uploadedImages) ? snap!.uploadedImages! : [];
             } catch {}
             // Handle both old string format and new object format for imageUrls
-            const directImages: string[] = Array.isArray((clothForItem as any)?.imageUrls) 
+            const directImages: string[] = Array.isArray((clothForItem as any)?.imageUrls)
               ? ((clothForItem as any).imageUrls as any[]).map((img: any) => {
                   if (typeof img === 'string') {
                     return img;
@@ -507,14 +508,13 @@ const OrderDetails = () => {
                     return img.url || img.originalUrl || img.publicUrl || img.viewUrl || '';
                   }
                   return '';
-                }).filter((url: string) => url && url.trim() !== '') 
+                }).filter((url: string) => url && url.trim() !== '')
               : [];
-            
             // Also check if imageUrls is a single string (not an array)
             if (typeof (clothForItem as any)?.imageUrls === 'string' && (clothForItem as any).imageUrls.trim() !== '') {
               directImages.push((clothForItem as any).imageUrls);
             }
-            
+
             // Also check for images in the cloth object itself
             const clothImages: string[] = [];
             if ((clothForItem as any)?.images && Array.isArray((clothForItem as any).images)) {
@@ -523,11 +523,11 @@ const OrderDetails = () => {
                   clothImages.push(img);
                 } else if (img && typeof img === 'object') {
                   const url = img.url || img.originalUrl || img.publicUrl || img.viewUrl || '';
-                  if (url) clothImages.push(url);
+                  if (url) { clothImages.push(url); }
                 }
               });
             }
-            
+
             // Combine all image sources with priority: directImages > clothImages > notesImages > cacheImages
             let imagesArray: string[] = [
               ...directImages,
@@ -535,12 +535,12 @@ const OrderDetails = () => {
               ...notesImages,
               ...cacheImages
             ].filter((url, index, arr) => arr.indexOf(url) === index); // Remove duplicates
-            
+
             // Only show images if they actually exist
             if (imagesArray.length === 0) {
               console.log('[OrderDetails] No images found for cloth item:', clothForItem?.type);
             }
-            
+
             // Debug logging for images (simplified)
             if (imagesArray.length > 0) {
               console.log('[OrderDetails] Found images for', clothForItem?.type, ':', imagesArray.length, 'images');
@@ -569,7 +569,7 @@ const OrderDetails = () => {
               const seenMs = new Set<string>();
               measurementsArray = measurementsArray.filter((m: any) => {
                 const key = JSON.stringify(Object.keys(m).sort().reduce((o: any, k: string) => { o[k] = m[k]; return o; }, {}));
-                if (seenMs.has(key)) return false;
+                if (seenMs.has(key)) { return false; }
                 seenMs.add(key);
                 return true;
               });
@@ -586,8 +586,8 @@ const OrderDetails = () => {
             );
 
             const measurementFields = [
-              'height','chest','waist','hip','shoulder','sleeveLength','inseam','neck',
-              'armhole','bicep','wrist','outseam','thigh','knee','calf','ankle'
+              'height', 'chest', 'waist', 'hip', 'shoulder', 'sleeveLength', 'inseam', 'neck',
+              'armhole', 'bicep', 'wrist', 'outseam', 'thigh', 'knee', 'calf', 'ankle',
             ];
             const renderMeasurementsGrid = () => (
               <View style={styles.measureGrid}>
@@ -595,7 +595,7 @@ const OrderDetails = () => {
                   <RegularText style={styles.measureEmpty}>No measurements added.</RegularText>
                 )}
                 {measurementsArray.map((m: any, idx: number) => (
-                  <View key={idx} style={styles.measureGroup}>
+                  <View key={idx} style={styles.measureGroup}>r
                     {measurementFields.filter(k => m?.[k] !== undefined && m?.[k] !== null)
                       .map((key) => (
                         <View key={key} style={styles.measureItem}>
@@ -608,7 +608,7 @@ const OrderDetails = () => {
               </View>
             );
             return (
-              <View key={item.id || item.name} style={{ marginBottom: 12 }}>
+              <View key={item.id || item.name} style={styles.itemContainer}>
                 <View style={styles.orderItem}>
                   <RegularText style={styles.itemName}>{order.orderType === 'ALTERATION' ? `Alteration: ${item.name}` : item.name}</RegularText>
                   <RegularText style={styles.itemDetails}>
@@ -649,7 +649,7 @@ const OrderDetails = () => {
                     )}
                     {/* Images Section - Only show if there are images */}
                     {imagesArray.length > 0 && (
-                      <View style={{ marginTop: 8 }}>
+                      <View style={styles.imageSection}>
                         <RegularText style={styles.subTitle}>
                           Images ({imagesArray.length})
                         </RegularText>
@@ -658,8 +658,8 @@ const OrderDetails = () => {
                             <View key={idx} style={styles.imageThumbWrap}>
                               <View style={styles.imageThumbShadow}>
                                 <View style={styles.imageThumbBorder}>
-                                  <Image 
-                                    source={{ uri }} 
+                                  <Image
+                                    source={{ uri }}
                                     style={styles.imageThumb}
                                     onError={(error) => {
                                       console.log('🚨 OrderDetails Image load error:', error.nativeEvent.error);
@@ -726,7 +726,7 @@ const OrderDetails = () => {
         <TitleText style={styles.sectionTitle}>Notes</TitleText>
         {(() => {
           try {
-            if (!order.notes) return <RegularText style={styles.notes}>-</RegularText>;
+            if (!order.notes) { return <RegularText style={styles.notes}>-</RegularText>; }
             if (typeof order.notes === 'string') {
               try {
                 const n = JSON.parse(order.notes);
@@ -752,7 +752,7 @@ const OrderDetails = () => {
             gradientColors={['#229B73', '#1a8f6e', '#000000']}
             onPress={() => askConfirm('in_progress')}
             disabled={order.status === 'in_progress' || order.status === 'delivered' || order.status === 'cancelled'}
-            style={{ borderRadius: 8, opacity: (order.status === 'in_progress' || order.status === 'delivered' || order.status === 'cancelled') ? 0.5 : 1, flex: 1, marginRight: 8 }}
+            style={[styles.actionButton, { opacity: (order.status === 'in_progress' || order.status === 'delivered' || order.status === 'cancelled') ? 0.5 : 1, flex: 1, marginRight: 8 }]}
           />
 
           <Button
@@ -762,7 +762,7 @@ const OrderDetails = () => {
             gradientColors={['#229B73', '#1a8f6e', '#000000']}
             onPress={() => askConfirm('delivered')}
             disabled={order.status === 'delivered'}
-            style={{ borderRadius: 8, opacity: order.status === 'delivered' ? 0.5 : 1, flex: 1, marginLeft: 8 }}
+            style={[styles.actionButton, { opacity: order.status === 'delivered' ? 0.5 : 1, flex: 1, marginLeft: 8 }]}
           />
         </View>
 
@@ -772,7 +772,7 @@ const OrderDetails = () => {
           height={36}
           gradientColors={['#ef4444', '#dc2626', '#b91c1c']}
           onPress={() => askConfirm('cancelled')}
-          style={{ borderRadius: 8, width: '100%', marginTop: 12 }}
+          style={[styles.actionButton, { width: '100%', marginTop: 12 }]}
         />
       </View>
 
@@ -796,4 +796,4 @@ const OrderDetails = () => {
 };
 
 
-export default OrderDetails; 
+export default OrderDetails;

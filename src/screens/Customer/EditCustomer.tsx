@@ -8,6 +8,7 @@ import apiService from '../../services/api';
 import { launchImageLibrary } from 'react-native-image-picker';
 import Button from '../../components/Button';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '../../context/ToastContext';
 
 interface Customer {
   id: string;
@@ -26,6 +27,7 @@ interface CustomerForm {
 const EditCustomer = () => {
   const navigation = useNavigation();
   const { t } = useTranslation();
+  const { showToast } = useToast();
   type EditCustomerRouteProp = RouteProp<{ EditCustomer: { customerId: string } }, 'EditCustomer'>;
   const route = useRoute<EditCustomerRouteProp>();
   const { customerId } = route.params;
@@ -151,12 +153,8 @@ const EditCustomer = () => {
       const updatedCustomer = await apiService.updateCustomer(customer.id, customerData);
       console.log('Customer update response:', updatedCustomer);
       
-      Alert.alert('Success', 'Customer updated successfully!', [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack()
-        }
-      ]);
+      showToast('Customer updated successfully!', 'success');
+      navigation.goBack();
     } catch (err) {
       console.error('Error updating customer:', err);
       Alert.alert('Error', 'Failed to update customer. Please try again.');

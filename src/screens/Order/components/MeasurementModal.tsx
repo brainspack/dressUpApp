@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, ScrollView, Image } from 'react-native';
+import { View,  TextInput, ScrollView, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import LinearGradient from 'react-native-linear-gradient';
+// import LinearGradient from 'react-native-linear-gradient';
 import { RegularText, TitleText } from '../../../components/CustomText';
 import { styles } from '../styles/AddOrderStyles';
 import Button from '../../../components/Button';
@@ -31,7 +31,7 @@ export const MeasurementModal: React.FC<MeasurementModalProps> = ({
 
   const addField = (key: string, labelKey: string) => (
     <View style={styles.measurementField} key={key}>
-      <RegularText style={styles.measurementLabel}>{t(labelKey)}</RegularText>
+      <RegularText style={styles.measurementLabel}>{`${t(labelKey)} (inch)`}</RegularText>
       <TextInput
         style={styles.measurementInput}
         value={(currentMeasurement as any)[key]}

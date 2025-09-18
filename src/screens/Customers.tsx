@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+// import { useNavigation } from '@react-navigation/native';
+// import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { MainTabParamList } from '../navigation/types';
+// import { MainTabParamList } from '../navigation/types';
 import Button from '../components/Button';
 import Input from '../components/Input';
 
-type CustomersScreenNavigationProp = NativeStackNavigationProp<MainTabParamList, 'Customers'>;
+// type CustomersScreenNavigationProp = NativeStackNavigationProp<MainTabParamList, 'Customers'>;
 
 // Mock data for customers
 const mockCustomers = [
@@ -16,10 +16,10 @@ const mockCustomers = [
 ];
 
 const Customers = () => {
-  const navigation = useNavigation<CustomersScreenNavigationProp>();
+  // const navigation = useNavigation<CustomersScreenNavigationProp>();
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
-  const [customers, setCustomers] = useState(mockCustomers);
+  const [customers, _setCustomers] = useState(mockCustomers);
 
   const renderCustomerItem = ({ item }: { item: typeof mockCustomers[0] }) => (
     <TouchableOpacity
@@ -108,4 +108,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Customers; 
+export default Customers;

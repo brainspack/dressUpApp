@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+/* eslint-disable react-native/no-inline-styles, no-trailing-spaces */
+import { View, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { customerDetailsStyles as styles } from './styles';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -10,9 +11,7 @@ import { CustomerStackParamList } from '../../navigation/types';
 import { RegularText, TitleText } from '../../components/CustomText';
 import colors from '../../constants/colors';
 
-interface CustomerDetailsRouteParams {
-  customerId: string;
-}
+// CustomerDetailsRouteParams was unused; removed to satisfy linter
 
 interface Customer {
   id: string;
@@ -31,21 +30,7 @@ const CustomerDetails = () => {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchCustomerDetails();
-  }, [customerId]);
-
-  // Refresh data when screen comes back into focus (e.g., after editing)
-  useFocusEffect(
-    React.useCallback(() => {
-      console.log('[CustomerDetails] Screen focused, refreshing data for customerId:', customerId);
-      if (customerId) {
-        fetchCustomerDetails();
-      }
-    }, [customerId])
-  );
-
-  const fetchCustomerDetails = async () => {
+  const fetchCustomerDetails = React.useCallback(async () => {
     try {
       console.log('[CustomerDetails] Fetching customer details for ID:', customerId);
       setLoading(true);
@@ -58,7 +43,23 @@ const CustomerDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [customerId]);
+
+  useEffect(() => {
+    fetchCustomerDetails();
+  }, [fetchCustomerDetails]);
+
+  // Refresh data when screen comes back into focus (e.g., after editing)
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('[CustomerDetails] Screen focused, refreshing data for customerId:', customerId);
+      if (customerId) {
+        fetchCustomerDetails();
+      }
+    }, [customerId, fetchCustomerDetails])
+  );
+
+  // moved into useCallback above to satisfy dependency rules
 
   const handleDelete = async () => {
     Alert.alert(
@@ -83,12 +84,12 @@ const CustomerDetails = () => {
     );
   };
 
-  const getCustomerNumber = (customer: Customer) => {
-    if (customer.serialNumber) {
-      return `CUS-${String(customer.serialNumber).padStart(4, '0')}`;
+  const getCustomerNumber = (cust: Customer) => {
+    if (cust.serialNumber) {
+      return `CUS-${String(cust.serialNumber).padStart(4, '0')}`;
     }
     // Fallback: generate from ID hash
-    const hash = Math.abs(Array.from(customer.id).reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0)) % 10000;
+    const hash = Math.abs(Array.from(cust.id).reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0)) % 10000;
     return `CUS-${String(hash).padStart(4, '0')}`;
   };
 
@@ -186,49 +187,52 @@ const CustomerDetails = () => {
 
       {/* Action Buttons */}
       <View style={styles.actionSection}>
-        <Button
-          variant="gradient"
-          title="Edit Customer"
-          height={56}
-          gradientColors={['#229B73', '#1a8f6e', '#000000']}
-          icon={<Icon name="edit" size={24} color="#fff" />}
-          onPress={() => navigation.navigate('EditCustomer', { customerId: customer.id })}
-          style={{ marginBottom: 12, borderRadius: 12 }}
-        />
-        
-        <Button
-          variant="light"
-          title="Create Order"
-          height={56}
-          onPress={() => {
-            const root = (navigation as any).getParent?.();
-            if (root) {
-              root.navigate('Orders', {
-                screen: 'OutfitSelection',
-                params: {
-                  customerId: customer.id,
-                  shopId: customer.shopId,
-                  customerName: customer.name,
-                },
-              });
-            } else {
-              // Fallback: try navigating relative to current nav if parent is unavailable
-              (navigation as any).navigate('Orders', {
-                screen: 'OutfitSelection',
-                params: {
-                  customerId: customer.id,
-                  shopId: customer.shopId,
-                  customerName: customer.name,
-                },
-              });
-            }
-          }}
-          style={{ borderRadius: 12 }}
-        />
+        <View style={styles.buttonRow}>
+          <Button
+            variant="gradient"
+            title="Edit Customer"
+            height={56}
+           
+            gradientColors={['#229B73', '#1a8f6e', '#000000']}
+            icon={<Icon name="edit" size={24} color="#fff" />}
+            onPress={() => navigation.navigate('EditCustomer', { customerId: customer.id })}
+            style={styles.actionButton}
+          />
+          
+          <Button
+            variant="light"
+            title="Create Order"
+            height={56}
+            onPress={() => {
+              const root = (navigation as any).getParent?.();
+              if (root) {
+                root.navigate('Orders', {
+                  screen: 'OutfitSelection',
+                  params: {
+                    customerId: customer.id,
+                    shopId: customer.shopId,
+                    customerName: customer.name,
+                  },
+                });
+              } else {
+                // Fallback: try navigating relative to current nav if parent is unavailable
+                (navigation as any).navigate('Orders', {
+                  screen: 'OutfitSelection',
+                  params: {
+                    customerId: customer.id,
+                    shopId: customer.shopId,
+                    customerName: customer.name,
+                  },
+                });
+              }
+            }}
+            style={styles.actionButton}
+          />
+        </View>
       </View>
     </ScrollView>
   );
 };
 
 
-export default CustomerDetails; 
+export default CustomerDetails;

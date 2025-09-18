@@ -10,6 +10,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Button from '../../components/Button';
 import apiService from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useToast } from '../../context/ToastContext';
 import { styles } from './styles/OrderSummaryStyles';
 type OrderSummaryScreenNavigationProp = NativeStackNavigationProp<OrderStackParamList, 'OrderSummary'>;
 type OrderSummaryScreenRouteProp = RouteProp<OrderStackParamList, 'OrderSummary'>;
@@ -27,6 +28,7 @@ const OrderSummary = () => {
   console.log('OrderSummary component is being rendered!');
   const navigation = useNavigation<OrderSummaryScreenNavigationProp>();
   const route = useRoute<OrderSummaryScreenRouteProp>();
+  const { showToast } = useToast();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [localSelectedOutfits, setLocalSelectedOutfits] = useState(route.params?.selectedOutfits || []);
@@ -299,7 +301,7 @@ const OrderSummary = () => {
         console.error('Error clearing stored images:', cleanupError);
       }
 
-      Alert.alert('Success', 'Orders created successfully!');
+      showToast('Orders created successfully!', 'success');
       navigation.navigate('OrderList');
 
     } catch (error) {
@@ -308,7 +310,18 @@ const OrderSummary = () => {
     }
   };
 
-  // Removed unused helpers (handleCreateOrder, handleRemoveOutfit)
+  const handleRemoveOutfitChip = useCallback(async (outfitId: string, outfitType?: string) => {
+    try {
+      setLocalSelectedOutfits(prev => prev.filter(o => o.id !== outfitId));
+      if (outfitType) {
+        try {
+          await AsyncStorage.removeItem(`uploadedImages_${outfitType}`);
+          await AsyncStorage.removeItem(`ms_${outfitId}`);
+        } catch {}
+      }
+      showToast('Removed outfit from order', 'success');
+    } catch (e) {}
+  }, [showToast]);
 
   const getInitials = (name: string) => {
     return name
@@ -375,6 +388,12 @@ const OrderSummary = () => {
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {localSelectedOutfits.map((outfit) => (
                 <View key={outfit.id} style={styles.outfitChip}>
+                  <TouchableOpacity
+                    style={[styles.outfitChipClose, styles.outfitChipCloseAbs]}
+                    onPress={() => handleRemoveOutfitChip(outfit.id, outfit.type)}
+                  >
+                    <Icon name="close" size={12} color="#6B7280" />
+                  </TouchableOpacity>
                   <View style={styles.outfitChipIconWrap}>
                     {outfit.image ? (
                       <Image source={outfit.image} style={styles.outfitChipIcon} />

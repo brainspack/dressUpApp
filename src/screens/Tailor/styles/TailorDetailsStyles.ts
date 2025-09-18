@@ -57,8 +57,8 @@ export const tailorDetailsStyles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
-        marginHorizontal: 0,
-        marginVertical: 0,
+        marginHorizontal: 12,
+        marginVertical: 16,
       },
     }),
   },
@@ -167,9 +167,9 @@ export const tailorDetailsStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 12,
-    gap: 8,
   },
   topButton: {
-    flex: 1,
+    width: '48%',
+    borderRadius: 12,
   },
 });

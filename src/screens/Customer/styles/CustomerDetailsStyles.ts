@@ -201,4 +201,13 @@ export const customerDetailsStyles = StyleSheet.create({
     margin: 16,
     marginBottom: 32,
   },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  actionButton: {
+    width: '48%',
+    borderRadius: 12,
+  },
 });

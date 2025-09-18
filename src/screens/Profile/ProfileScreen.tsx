@@ -1,7 +1,8 @@
+/* eslint-disable no-trailing-spaces, react-native/no-inline-styles, no-new */
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Image, ScrollView, Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { View, Text, TextInput, TouchableOpacity, Alert, Image, ScrollView, Platform } from 'react-native';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+// import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
@@ -10,13 +11,16 @@ import colors from '../../constants/colors';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Button from '../../components/Button';
+import { profileScreenStyles as styles } from './styles/ProfileScreenStyles';
 import { launchImageLibrary, ImagePickerResponse, MediaType } from 'react-native-image-picker';
 import apiService from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 const ProfileScreen = () => {
-  const navigation = useNavigation();
+  // const navigation = useNavigation();
   const { t, i18n } = useTranslation();
   const { currentLanguage, setAppLanguage } = useLanguage();
+  const { showToast } = useToast();
   const { accessToken, setAccessToken, setIsAuthenticated, userInfo, updateUserProfile } = useAuth();
   
   const [isEditing, setIsEditing] = useState(false);
@@ -77,10 +81,31 @@ const ProfileScreen = () => {
               setIsEditing(true);
             }
             
-            // Update language if it's different
-            if (profileData.language && profileData.language.toLowerCase() !== currentLanguage) {
-              console.log('ProfileScreen: Updating language from API:', profileData.language);
-              setSelectedLanguage(profileData.language.toLowerCase());
+            // Language handling
+            // Rule: For brand new users (no name) or missing language, default to English tab and app language.
+            // Otherwise, keep app language and tab in sync with server preference to avoid mismatch.
+            try {
+              const apiLang = (profileData.language || '').toLowerCase();
+              const isNewUser = !profileData.name || !profileData.name.trim();
+              if (!apiLang || isNewUser) {
+                // Force English as default
+                if (currentLanguage !== 'en') {
+                  await setAppLanguage('en');
+                  await i18n.changeLanguage('en');
+                }
+                setSelectedLanguage('en');
+                // Persist preference so next loads are consistent
+                try { await apiService.updateUserProfile({ language: 'EN' }); } catch {}
+              } else if (apiLang !== currentLanguage) {
+                console.log('ProfileScreen: Syncing app language with API:', apiLang);
+                await setAppLanguage(apiLang);
+                await i18n.changeLanguage(apiLang);
+                setSelectedLanguage(apiLang);
+              } else {
+                setSelectedLanguage(currentLanguage);
+              }
+            } catch (e) {
+              setSelectedLanguage(currentLanguage);
             }
           }
         } catch (error) {
@@ -91,7 +116,7 @@ const ProfileScreen = () => {
     };
 
     loadUserProfile();
-  }, [accessToken, currentLanguage]);
+  }, [accessToken, currentLanguage, i18n, setAppLanguage]);
 
   useEffect(() => {
     setSelectedLanguage(currentLanguage);
@@ -109,7 +134,7 @@ const ProfileScreen = () => {
       // Update language preference in the backend
       try {
         const updateData = {
-          language: newLanguage.toUpperCase() // Convert to EN/HI format
+          language: newLanguage.toUpperCase(), // Convert to EN/HI format
         };
         console.log('ProfileScreen: Updating language preference:', updateData);
         await apiService.updateUserProfile(updateData);
@@ -137,7 +162,7 @@ const ProfileScreen = () => {
       // Update profile data via API
       const updateData = {
         name: tempUserName.trim(),
-        language: selectedLanguage.toUpperCase() // Convert to EN/HI format
+        language: selectedLanguage.toUpperCase(), // Convert to EN/HI format
       };
       
       console.log('ProfileScreen: Updating profile with data:', updateData);
@@ -152,7 +177,7 @@ const ProfileScreen = () => {
       
       setUserName(tempUserName.trim());
       setIsEditing(false);
-      Alert.alert('Success', 'Profile updated successfully!');
+      showToast('Profile updated successfully!', 'success');
       console.log('ProfileScreen: Profile saved successfully');
     } catch (error) {
       console.error('ProfileScreen: Error saving profile:', error);
@@ -195,18 +220,7 @@ const ProfileScreen = () => {
       .slice(0, 2);
   };
 
-  // Test if image URL is accessible
-  const testImageUrl = async (url: string) => {
-    try {
-      console.log('🔍 ProfileScreen: Testing image URL accessibility:', url);
-      const response = await fetch(url, { method: 'HEAD' });
-      console.log('🔍 ProfileScreen: Image URL test result:', response.status, response.statusText);
-      return response.ok;
-    } catch (error) {
-      console.error('🔍 ProfileScreen: Image URL test failed:', error);
-      return false;
-    }
-  };
+  // Removed unused testImageUrl helper
 
   // Validate image URL format
   const isValidImageUrl = (url: string | null): boolean => {
@@ -268,7 +282,7 @@ const ProfileScreen = () => {
               // Clear local image URI since we now have the backend URL
               setLocalImageUri(null);
               
-              Alert.alert('Success', 'Profile image updated successfully!');
+              showToast('Profile image updated successfully!', 'success');
             } else {
               console.error('ProfileScreen: Upload failed:', uploadResult);
               throw new Error(uploadResult.error || 'Failed to upload profile image');
@@ -303,7 +317,7 @@ const ProfileScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <Icon name="menu" size={24} color={colors.textPrimary} />
-        <TitleText style={styles.headerTitle}>Profile</TitleText>
+        <TitleText style={styles.headerTitle}>{t('profile.profile') || 'Profile'}</TitleText>
         <View style={{ width: 24 }} />
       </View>
 
@@ -512,242 +526,5 @@ const ProfileScreen = () => {
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 20,
-    backgroundColor: colors.white,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.textPrimary,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 15,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  activeTab: {
-    borderBottomColor: colors.brand,
-  },
-  tabText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  activeTabText: {
-    color: colors.brand,
-    fontWeight: '600',
-  },
-
-  profileCard: {
-    margin: 16,
-    borderRadius: 20,
-    overflow: 'hidden',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-  },
-  profileGradient: {
-    padding: 40,
-    alignItems: 'center',
-    borderRadius: 20,
-    width: '100%',
-    ...Platform.select({
-      ios: {
-        minHeight: 250,
-        paddingHorizontal: 1,
-        paddingVertical: 1,
-      },
-      android: {
-        minHeight: 180,
-      },
-    }),
-  },
-  profileIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-    ...Platform.select({
-      ios: {
-        marginTop: 30,
-      },
-    }),
-  },
-  profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-  },
-  profileImageRounded: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    // Platform-specific styling for consistent image display
-    ...Platform.select({
-      ios: {
-        // marginTop: 40,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-      },
-      android: {
-        backgroundColor: 'transparent',
-      },
-    }),
-  },
-  profileInitials: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  profileName: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#ffffff',
-    marginBottom: 12,
-    textAlign: 'center',
-    paddingHorizontal: 10,
-    lineHeight: 34,
-    paddingVertical: 4,
-  },
-  changePhotoButton: {
-    paddingVertical: 8,
-  },
-  changePhotoText: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontWeight: '600',
-  },
-  infoSection: {
-    margin: 16,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  editSection: {
-    margin: 16,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 20,
-  },
-  infoIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f0fdf4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 4,
-    fontWeight: '500',
-  },
-  infoValue: {
-    fontSize: 16,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    lineHeight: 22,
-  },
-  nameWithEdit: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  editIconButton: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  editInputContainer: {
-    marginBottom: 20,
-  },
-  editLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: 12,
-  },
-  helpMessageContainer: {
-    backgroundColor: '#E0F2FE',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.brand,
-  },
-  helpMessage: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    lineHeight: 20,
-  },
-  editInput: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: colors.textPrimary,
-    backgroundColor: colors.white,
-  },
-  actionSection: {
-    margin: 16,
-    marginBottom: 32,
-  },
-});
 
 export default ProfileScreen;

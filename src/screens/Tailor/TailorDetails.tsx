@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable react-native/no-inline-styles, no-trailing-spaces */
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { tailorDetailsStyles as styles } from './styles';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
@@ -10,10 +11,9 @@ import Button from '../../components/Button';
 import { TailorStackParamList } from '../../navigation/types';
 import { RegularText, TitleText } from '../../components/CustomText';
 import colors from '../../constants/colors';
+import { useToast } from '../../context/ToastContext';
 
-interface TailorDetailsRouteParams {
-  tailorId: string;
-}
+// TailorDetailsRouteParams was unused; removed to satisfy linter
 
 interface Tailor {
   id: string;
@@ -38,14 +38,47 @@ const TailorDetails = () => {
   const navigation = useNavigation<TailorDetailsNavigationProp>();
   const route = useRoute<RouteProp<TailorStackParamList, 'TailorDetails'>>();
   const { tailorId } = route.params;
+  const { showToast } = useToast();
   const [tailor, setTailor] = useState<Tailor | null>(null);
   const [shop, setShop] = useState<Shop | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const fetchShopDetails = useCallback(async (shopId?: string) => {
+    const targetShopId = shopId || tailor?.shopId;
+    if (!targetShopId) { return; }
+    try {
+      console.log('[TailorDetails] Fetching shop details for shopId:', targetShopId);
+      const shopData = await apiService.getShopById(targetShopId);
+      console.log('[TailorDetails] Received shop data:', shopData);
+      setShop(shopData);
+    } catch (error) {
+      console.error('Error fetching shop details:', error);
+    }
+  }, [tailor?.shopId]);
+
+  const fetchTailorDetails = useCallback(async () => {
+    try {
+      console.log('[TailorDetails] Fetching tailor details for ID:', tailorId);
+      setLoading(true);
+      const tailorData = await apiService.getTailorById(tailorId);
+      console.log('[TailorDetails] Received tailor data:', tailorData);
+      setTailor(tailorData);
+      if (tailorData?.shopId) {
+        console.log('[TailorDetails] Fetching shop details for shopId:', tailorData.shopId);
+        fetchShopDetails(tailorData.shopId);
+      }
+    } catch (error) {
+      console.error('Error fetching tailor details:', error);
+      Alert.alert('Error', 'Failed to fetch tailor details');
+    } finally {
+      setLoading(false);
+    }
+  }, [tailorId, fetchShopDetails]);
+
   useEffect(() => {
     fetchTailorDetails();
-  }, [tailorId]);
+  }, [fetchTailorDetails]);
 
 
 
@@ -59,47 +92,10 @@ const TailorDetails = () => {
         setShop(null);
         fetchTailorDetails();
       }
-    }, [tailorId])
+    }, [tailorId, fetchTailorDetails])
   );
 
-  const fetchTailorDetails = async () => {
-    try {
-      console.log('[TailorDetails] Fetching tailor details for ID:', tailorId);
-      setLoading(true);
-      
-      // Add timestamp to prevent caching
-      const timestamp = Date.now();
-      const tailorData = await apiService.getTailorById(tailorId);
-      console.log('[TailorDetails] Received tailor data:', tailorData, 'at timestamp:', timestamp);
-      setTailor(tailorData);
-      
-      // Also fetch shop details if we have a shopId
-      if (tailorData?.shopId) {
-        console.log('[TailorDetails] Fetching shop details for shopId:', tailorData.shopId);
-        fetchShopDetails(tailorData.shopId);
-      }
-    } catch (error) {
-      console.error('Error fetching tailor details:', error);
-      Alert.alert('Error', 'Failed to fetch tailor details');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchShopDetails = async (shopId?: string) => {
-    const targetShopId = shopId || tailor?.shopId;
-    if (!targetShopId) return;
-    
-    try {
-      console.log('[TailorDetails] Fetching shop details for shopId:', targetShopId);
-      const shopData = await apiService.getShopById(targetShopId);
-      console.log('[TailorDetails] Received shop data:', shopData);
-      setShop(shopData);
-    } catch (error) {
-      console.error('Error fetching shop details:', error);
-      // Don't show error alert for shop details, just log it
-    }
-  };
+  // fetchShopDetails defined above
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -126,10 +122,8 @@ const TailorDetails = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Use available soft-delete API to satisfy types
-              // Fallback to deleteTailor if implemented later
               await (apiService as any).softDeleteTailor(tailorId);
-              Alert.alert('Success', 'Tailor deleted successfully');
+              showToast('Tailor deleted successfully', 'success');
               (navigation as any).goBack();
             } catch (e) {
               Alert.alert('Error', 'Failed to delete tailor');
@@ -140,22 +134,22 @@ const TailorDetails = () => {
     );
   };
 
-  const getTailorNumber = (tailor: Tailor) => {
-    if (tailor.serialNumber) {
-      return `TLR-${String(tailor.serialNumber).padStart(4, '0')}`;
+  const getTailorNumber = (tailorObj: Tailor) => {
+    if (tailorObj.serialNumber) {
+      return `TLR-${String(tailorObj.serialNumber).padStart(4, '0')}`;
     }
     // Fallback: generate from ID hash
-    const hash = Math.abs(Array.from(tailor.id).reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0)) % 10000;
+    const hash = Math.abs(Array.from(tailorObj.id).reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0)) % 10000;
     return `TLR-${String(hash).padStart(4, '0')}`;
   };
 
-  const getShopNumber = (shop: Shop | null) => {
-    if (shop?.serialNumber) {
-      return `SHP-${String(shop.serialNumber).padStart(4, '0')}`;
+  const getShopNumber = (shopObj: Shop | null) => {
+    if (shopObj?.serialNumber) {
+      return `SHP-${String(shopObj.serialNumber).padStart(4, '0')}`;
     }
     // Fallback: generate from shop ID hash
-    if (shop?.id) {
-      const hash = Math.abs(Array.from(shop.id).reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0)) % 10000;
+    if (shopObj?.id) {
+      const hash = Math.abs(Array.from(shopObj.id).reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0)) % 10000;
       return `SHP-${String(hash).padStart(4, '0')}`;
     }
     return 'SHP-0000';
@@ -176,7 +170,7 @@ const TailorDetails = () => {
         <Icon name="error" size={64} color={colors.danger} />
         <TitleText style={styles.errorTitle}>Tailor Not Found</TitleText>
         <RegularText style={styles.errorText}>The tailor you're looking for doesn't exist or has been deleted.</RegularText>
-        <Button
+          <Button
           variant="gradient"
           title="Go Back"
           height={48}
@@ -275,7 +269,7 @@ const TailorDetails = () => {
             gradientColors={['#229B73', '#1a8f6e', '#000000']}
             icon={<Icon name="edit" size={24} color="#fff" />}
             onPress={() => navigation.navigate('EditTailor', { tailorId: tailor.id })}
-            style={[styles.topButton, { borderRadius: 12 }]}
+            style={styles.topButton}
           />
           
           <Button
@@ -296,7 +290,7 @@ const TailorDetails = () => {
                 });
               }
             }}
-            style={[styles.topButton, { borderRadius: 12 }]}
+            style={styles.topButton}
           />
         </View>
 

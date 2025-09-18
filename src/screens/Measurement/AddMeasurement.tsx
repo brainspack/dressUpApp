@@ -6,6 +6,7 @@ import { CustomerStackParamList } from '../../navigation/types';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import { addMeasurementStyles as styles } from './styles/AddMeasurementStyles';
+import { useToast } from '../../context/ToastContext';
 
 type AddMeasurementScreenNavigationProp = NativeStackNavigationProp<CustomerStackParamList, 'AddMeasurement'>;
 type AddMeasurementScreenRouteProp = RouteProp<CustomerStackParamList, 'AddMeasurement'>;
@@ -40,6 +41,7 @@ interface MeasurementForm {
 const AddMeasurement = () => {
   const navigation = useNavigation<AddMeasurementScreenNavigationProp>();
   const route = useRoute<AddMeasurementScreenRouteProp>();
+  const { showToast } = useToast();
   const [type, setType] = useState<MeasurementType>('men');
   const [selectedMeasurementField, setSelectedMeasurementField] = useState('height');
   const [form, setForm] = useState<MeasurementForm>({
@@ -103,7 +105,7 @@ const AddMeasurement = () => {
 
       if (!response.ok) throw new Error('Failed to save measurements');
 
-      Alert.alert('Success', 'Measurements saved successfully');
+      showToast('Measurements saved successfully', 'success');
       navigation.goBack();
     } catch (error) {
       Alert.alert('Error', 'Failed to save measurements. Please try again.');

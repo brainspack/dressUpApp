@@ -14,6 +14,7 @@ import { RegularText, TitleText } from '../../components/CustomText';
 import colors from '../../constants/colors';
 import { styles } from './styles/OrderListStyles';
 import Button from '../../components/Button';
+import { useToast } from '../../context/ToastContext';
 
 
 type OrderListScreenNavigationProp = NativeStackNavigationProp<
@@ -103,6 +104,7 @@ const OrderList = () => {
   const [selectedTailorName, setSelectedTailorName] = useState<string>('');
   const [tailors, setTailors] = useState<any[]>([]);
   const [tailorDropdownVisible, setTailorDropdownVisible] = useState(false);
+  const { showToast } = useToast();
 
   // Move below fetchOrders to avoid "used before declaration" warnings
 
@@ -426,7 +428,7 @@ const OrderList = () => {
       setSelectedTailorName('');
       setTailorDropdownVisible(false);
       
-      Alert.alert('Success', 'Order assigned successfully!');
+      showToast('Order assigned successfully!', 'success');
     } catch (e) {
       console.error('Failed to assign order:', e);
       Alert.alert('Error', 'Failed to assign order');
@@ -441,7 +443,7 @@ const OrderList = () => {
       );
       setAllOrders([...updated]);
       setOrders([...updated]);
-      Alert.alert('Success', 'Assignment cancelled');
+      showToast('Assignment cancelled', 'success');
     } catch (e) {
       console.error('Failed to unassign order:', e);
       Alert.alert('Error', 'Failed to cancel assignment');

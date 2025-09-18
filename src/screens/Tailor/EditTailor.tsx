@@ -9,6 +9,7 @@ import Button from '../../components/Button';
 import { TailorStackParamList } from '../../navigation/types';
 import { RegularText, TitleText } from '../../components/CustomText';
 import colors from '../../constants/colors';
+import { useToast } from '../../context/ToastContext';
 
 interface EditTailorRouteParams {
   tailorId: string;
@@ -29,6 +30,7 @@ const EditTailor = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<TailorStackParamList, 'EditTailor'>>();
   const { tailorId } = route.params;
+  const { showToast } = useToast();
   
   const [tailor, setTailor] = useState<Tailor | null>(null);
   const [form, setForm] = useState<Partial<Tailor>>({});
@@ -74,14 +76,8 @@ const EditTailor = () => {
         mobileNumber: form.mobileNumber.trim(),
         address: form.address?.trim() || undefined,
       });
-      
-      // Show success message and navigate back
-      Alert.alert('Success', 'Tailor updated successfully!', [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack()
-        }
-      ]);
+      showToast('Tailor updated successfully!', 'success');
+      navigation.goBack();
     } catch (err) {
       console.error('Update error:', err);
       Alert.alert('Error', 'Failed to update tailor. Please try again.');

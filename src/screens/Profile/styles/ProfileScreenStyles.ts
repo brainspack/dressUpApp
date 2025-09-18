@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import colors from '../../../constants/colors';
 
 export const profileScreenStyles = StyleSheet.create({
@@ -9,16 +9,48 @@ export const profileScreenStyles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     paddingHorizontal: 16,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingTop: Platform.select({ ios: 68, android: 41 }) as number,
+    paddingBottom: Platform.select({ ios: 8, android: 12 }) as number,
     backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    // Shadow only on Android; iOS uses clean divider only
+    ...Platform.select({
+      ios: {
+        zIndex: 10,
+      },
+      android: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.18,
+        shadowRadius: 6,
+        elevation: 4,
+        zIndex: 10,
+      },
+    }),
   },
+  headerShadowSpacer: Platform.select({
+    ios: {
+      height: 0,
+    },
+      android: {
+        height: 1,
+        backgroundColor: 'transparent',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 3,
+        elevation: 1,
+      },
+  }) as any,
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    fontStyle: 'normal',
     color: colors.textPrimary,
+    marginLeft: 8,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -47,7 +79,7 @@ export const profileScreenStyles = StyleSheet.create({
   },
 
   profileCard: {
-    margin: 16,
+    margin: 1,
     borderRadius: 20,
     overflow: 'hidden',
     elevation: 8,
@@ -55,20 +87,44 @@ export const profileScreenStyles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
+    ...Platform.select({
+      ios: {
+        marginHorizontal: 14,
+        marginVertical: 16,
+      },
+      android: {
+        marginHorizontal: 14,
+        marginVertical: 16,
+      },
+    }),
   },
   profileGradient: {
-    padding: 40,
+    padding: 0,
     alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
     borderRadius: 20,
+    ...Platform.select({
+      ios: {
+        // paddingVertical: 30,
+        // paddingHorizontal: 20,
+        minHeight: 260,
+      },
+      android: {
+        paddingVertical: 30,
+        paddingHorizontal: 17,
+        minHeight: 164,
+      },
+    }),
   },
   profileIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 86,
+    height: 86,
+    borderRadius: 43,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 12,
   },
   profileImage: {
     width: 80,
@@ -86,22 +142,23 @@ export const profileScreenStyles = StyleSheet.create({
     color: '#ffffff',
   },
   profileName: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '700',
     color: '#ffffff',
-    marginBottom: 12,
+    marginBottom: 6,
     textAlign: 'center',
     paddingHorizontal: 10,
-    lineHeight: 34,
+    lineHeight: 30,
     paddingVertical: 4,
   },
   changePhotoButton: {
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   changePhotoText: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.95)',
     fontWeight: '600',
+    textAlign: 'center',
   },
   infoSection: {
     margin: 16,

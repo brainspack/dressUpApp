@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
 import { addCustomerStyles as styles } from './styles';
 import colors from '../../constants/colors';
@@ -6,9 +6,10 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import apiService from '../../services/api';
 import { launchImageLibrary } from 'react-native-image-picker';
-import LinearGradient from 'react-native-linear-gradient';
+// import LinearGradient from 'react-native-linear-gradient';
 import Button from '../../components/Button';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '../../context/ToastContext';
 
 interface CustomerForm {
   name: string;
@@ -16,17 +17,65 @@ interface CustomerForm {
   address: string;
 }
 
+interface FormErrors {
+  name?: string;
+  phone?: string;
+  address?: string;
+}
+
+interface ValidationRules {
+  name: {
+    required: boolean;
+    minLength: number;
+    maxLength: number;
+  };
+  phone: {
+    required: boolean;
+    pattern: RegExp;
+    length: number;
+  };
+  address: {
+    required: boolean;
+    maxLength: number;
+  };
+}
+
 const AddCustomer = () => {
   const navigation = useNavigation();
   const { t } = useTranslation();
+  const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [_uploadProgress, setUploadProgress] = useState(0);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [form, setForm] = useState<CustomerForm>({
     name: '',
     phone: '',
     address: '',
   });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [touched, setTouched] = useState<Record<keyof CustomerForm, boolean>>({
+    name: false,
+    phone: false,
+    address: false,
+  });
+
+  // Validation rules - memoized to prevent re-renders
+  const validationRules: ValidationRules = useMemo(() => ({
+    name: {
+      required: true,
+      minLength: 2,
+      maxLength: 50,
+    },
+    phone: {
+      required: true,
+      pattern: /^[0-9]{10}$/,
+      length: 10,
+    },
+    address: {
+      required: true,
+      maxLength: 200,
+    },
+  }), []);
 
   // Reset form when screen is focused
   useFocusEffect(
@@ -38,15 +87,93 @@ const AddCustomer = () => {
       });
       setProfileImage(null);
       setUploadProgress(0);
+      setErrors({});
+      setTouched({
+        name: false,
+        phone: false,
+        address: false,
+      });
     }, [])
   );
 
+  // Validation functions
+  const validateField = (field: keyof CustomerForm, value: string): string | undefined => {
+    const rules = validationRules[field];
+
+    if (rules.required && !value.trim()) {
+      return `${t('customer.' + field)} ${t('validation.required')}`;
+    }
+
+    if (field === 'name') {
+      const nameRules = rules as ValidationRules['name'];
+      if (value.trim().length < nameRules.minLength) {
+        return `${t('validation.minLength')} ${nameRules.minLength} ${t('validation.characters')}`;
+      }
+      if (value.trim().length > nameRules.maxLength) {
+        return `${t('validation.maxLength')} ${nameRules.maxLength} ${t('validation.characters')}`;
+      }
+      if (!/^[a-zA-Z\s]+$/.test(value.trim())) {
+        return t('validation.nameInvalid');
+      }
+    }
+
+    if (field === 'phone') {
+      const phoneRules = rules as ValidationRules['phone'];
+      if (!phoneRules.pattern.test(value.trim())) {
+        return t('validation.invalidPhone');
+      }
+    }
+
+    if (field === 'address') {
+      const addressRules = rules as ValidationRules['address'];
+      if (value.trim().length > addressRules.maxLength) {
+        return `${t('validation.maxLength')} ${addressRules.maxLength} ${t('validation.characters')}`;
+      }
+    }
+
+    return undefined;
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    let isValid = true;
+
+    Object.keys(form).forEach((field) => {
+      const fieldKey = field as keyof CustomerForm;
+      const error = validateField(fieldKey, form[fieldKey]);
+      if (error) {
+        newErrors[fieldKey] = error;
+        isValid = false;
+      }
+    });
+
+    // Only update errors if they have changed to prevent unnecessary re-renders
+    const hasErrorsChanged = JSON.stringify(newErrors) !== JSON.stringify(errors);
+    if (hasErrorsChanged) {
+      setErrors(newErrors);
+    }
+
+    return isValid;
+  };
+
+  // Memoized form validation to prevent infinite re-renders
+  const isFormValid = useMemo(() => {
+    const nameValid = form.name.trim().length >= validationRules.name.minLength &&
+                     form.name.trim().length <= validationRules.name.maxLength &&
+                     /^[a-zA-Z\s]+$/.test(form.name.trim());
+    const phoneValid = validationRules.phone.pattern.test(form.phone.trim());
+    const addressValid = validationRules.address.required
+      ? form.address.trim().length > 0 && form.address.trim().length <= validationRules.address.maxLength
+      : form.address.trim().length <= validationRules.address.maxLength;
+
+    return nameValid && phoneValid && addressValid;
+  }, [form.name, form.phone, form.address, validationRules]);
+
   // Compute form completion progress (image + name + valid phone + address)
-  const phoneRegex = /^[0-9]{10}$/;
   const baseCompleted =
     (profileImage ? 1 : 0) +
     (form.name.trim() ? 1 : 0) +
-    (phoneRegex.test(form.phone.trim()) ? 1 : 0);
+    (validationRules.phone.pattern.test(form.phone.trim()) ? 1 : 0);
   const baseTotal = 3;
   // Allow up to 80% before address, then 100% once address is filled
   let formProgress = Math.round((baseCompleted / baseTotal) * 80);
@@ -78,23 +205,42 @@ const AddCustomer = () => {
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
+      Alert.alert(t('common.error'), t('customer.imageUploadFailed'));
     }
   };
 
-  const handleSubmit = async () => {
-    if (!form.name.trim()) {
-      Alert.alert(t('common.error'), t('customer.name') + ' ' + t('validation.required'));
-      return;
-    }
-    if (!form.phone.trim()) {
-      Alert.alert(t('common.error'), t('customer.phone') + ' ' + t('validation.required'));
-      return;
+  const handleFieldChange = (field: keyof CustomerForm, value: string) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: undefined }));
     }
 
-    const phoneRegex = /^[0-9]{10}$/;
-    if (!phoneRegex.test(form.phone.trim())) {
-      Alert.alert(t('common.error'), t('validation.invalidPhone'));
+    // Validate field in real-time if it has been touched
+    if (touched[field]) {
+      const error = validateField(field, value);
+      setErrors(prev => ({ ...prev, [field]: error }));
+    }
+  };
+
+  const handleFieldBlur = (field: keyof CustomerForm) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    const error = validateField(field, form[field]);
+    setErrors(prev => ({ ...prev, [field]: error }));
+  };
+
+  const handleSubmit = async () => {
+    // Mark all fields as touched
+    setTouched({
+      name: true,
+      phone: true,
+      address: true,
+    });
+
+    // Validate form
+    if (!validateForm()) {
+      Alert.alert(t('common.error'), t('validation.formInvalid'));
       return;
     }
 
@@ -107,7 +253,7 @@ const AddCustomer = () => {
       };
 
       await apiService.createCustomer(customerData);
-      Alert.alert(t('common.success'), t('customer.addedSuccess'));
+      showToast(t('customer.addedSuccess'), 'success');
       navigation.goBack();
     } catch (err) {
       console.error('Error creating customer:', err);
@@ -116,10 +262,10 @@ const AddCustomer = () => {
       // Handle specific error cases
       if (error.message && error.message.includes('mobile number already exists')) {
         Alert.alert(
-          t('common.error'), 
-          'A customer with this mobile number already exists. Please use a different phone number.',
+          t('common.error'),
+          t('customer.phoneExists'),
           [
-            { text: 'OK', onPress: () => setForm(prev => ({ ...prev, phone: '' })) }
+            { text: 'OK', onPress: () => setForm(prev => ({ ...prev, phone: '' })) },
           ]
         );
       } else if (error.status === 409) {
@@ -184,55 +330,64 @@ const AddCustomer = () => {
             <Text style={styles.label}> {t('customer.name')}*</Text>
           </View>
           <TextInput
-            style={styles.input}
+            style={[styles.input, errors.name && styles.inputError]}
             placeholder={t('placeholders.fullName')}
             value={form.name}
-            onChangeText={(text) => setForm({ ...form, name: text })}
+            onChangeText={(text) => handleFieldChange('name', text)}
+            onBlur={() => handleFieldBlur('name')}
+            maxLength={validationRules.name.maxLength}
           />
+          {errors.name && (
+            <Text style={styles.errorText}>{errors.name}</Text>
+          )}
         </View>
 
-        {/* Phone Number */}
         {/* Phone Number */}
         <View style={styles.inputContainer}>
           <View style={styles.labelContainer}>
             <Icon name="phone" size={18} color={colors.textSecondary as string} />
-            <Text style={styles.label}> {t('customer.phone')}</Text>
+            <Text style={styles.label}> {t('customer.phone')}*</Text>
           </View>
           <View style={styles.phoneContainer}>
             <View style={styles.countryCode}>
               <Text style={styles.countryCodeText}>🇮🇳 +91</Text>
             </View>
             <TextInput
-              style={[styles.input, styles.phoneInput]}
+              style={[styles.input, styles.phoneInput, errors.phone && styles.inputError]}
               placeholder={t('placeholders.phone')}
               value={form.phone}
-              keyboardType="numeric"   // ensures number keypad
-              maxLength={10}           // limit to 10 digits
+              keyboardType="numeric"
+              maxLength={10}
               onChangeText={(text) => {
-                // allow only digits
                 const cleaned = text.replace(/[^0-9]/g, '');
-                setForm({ ...form, phone: cleaned });
+                handleFieldChange('phone', cleaned);
               }}
+              onBlur={() => handleFieldBlur('phone')}
             />
-            {/* <TouchableOpacity style={styles.contactIcon}>
-              <Icon name="contacts" size={20} color={colors.textSecondary as string} />
-            </TouchableOpacity> */}
           </View>
+          {errors.phone && (
+            <Text style={styles.errorText}>{errors.phone}</Text>
+          )}
         </View>
 
         {/* Address */}
         <View style={styles.inputContainer}>
           <View style={styles.labelContainer}>
             <Icon name="location-on" size={18} color={colors.textSecondary as string} />
-            <Text style={styles.label}> {t('customer.address')}</Text>
+            <Text style={styles.label}> {t('customer.address')}*</Text>
           </View>
           <TextInput
-            style={[styles.input, styles.textArea]}
+            style={[styles.input, styles.textArea, errors.address && styles.inputError]}
             placeholder={t('placeholders.address')}
             value={form.address}
-            onChangeText={(text) => setForm({ ...form, address: text })}
+            onChangeText={(text) => handleFieldChange('address', text)}
+            onBlur={() => handleFieldBlur('address')}
             multiline
+            maxLength={validationRules.address.maxLength}
           />
+          {errors.address && (
+            <Text style={styles.errorText}>{errors.address}</Text>
+          )}
         </View>
       </View>
 
@@ -243,8 +398,8 @@ const AddCustomer = () => {
         height={56}
         gradientColors={['#229B73', '#1a8f6e', '#000000']}
         onPress={handleSubmit}
-        disabled={isLoading}
-        style={{ margin: 16, borderRadius: 12 }}
+        disabled={isLoading || !isFormValid}
+        style={styles.submitButton}
       />
     </ScrollView>
   );

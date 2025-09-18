@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, Image, Platform, Modal } from 'react-native';
-import { useNavigation, RouteProp, useRoute } from '@react-navigation/native';
+import React, { useState} from 'react';
+import { View, Text, ScrollView, TextInput, TouchableOpacity,  Image, Platform, Modal } from 'react-native';
+import {  RouteProp, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import LinearGradient from 'react-native-linear-gradient';
+// import LinearGradient from 'react-native-linear-gradient';
 import Button from '../../components/Button';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -19,11 +19,11 @@ import { useOrderForm } from './hooks/useOrderForm';
 import { useShopId } from './hooks/useShopId';
 import { useOrderHandlers } from './handlers/orderHandlers';
 import { getRequiredMeasurements } from './utils/measurementUtils';
-import { orderTypes } from './constants/orderConstants';
+// import { orderTypes } from './constants/orderConstants';
 
 
 const AddOrder = () => {
-  const navigation = useNavigation();
+  // const navigation = useNavigation();
   const route = useRoute<RouteProp<OrderStackParamList, 'AddOrder'>>();
   const { t } = useTranslation();
   
@@ -70,7 +70,7 @@ const AddOrder = () => {
     handleAddMeasurement,
     handleRemoveItem,
     handleSaveAndBack,
-    handleSubmit,
+    // handleSubmit,
   } = useOrderHandlers(
     formData,
     setFormData,
@@ -92,7 +92,7 @@ const AddOrder = () => {
   // DatePicker handlers
   const handleDeliveryDateChange = (event: any, selectedDate?: Date) => {
     // On Android the picker closes automatically; on iOS we keep it open in modal until Done
-    if (Platform.OS === 'android') setShowDeliveryDatePicker(false);
+    if (Platform.OS === 'android') { setShowDeliveryDatePicker(false); }
     if (selectedDate) {
       setDeliveryDateObj(selectedDate);
       setFormData({ ...formData, deliveryDate: selectedDate.toLocaleDateString() });
@@ -100,7 +100,7 @@ const AddOrder = () => {
   };
 
   const handleTrialDateChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') setShowTrialDatePicker(false);
+    if (Platform.OS === 'android') { setShowTrialDatePicker(false); }
     if (selectedDate) {
       setTrialDateObj(selectedDate);
       setFormData({ ...formData, trialDate: selectedDate.toLocaleDateString() });
@@ -132,7 +132,7 @@ const AddOrder = () => {
           <View style={styles.formGroup}>
             <RegularText style={styles.label}>{t('order.customerName')}</RegularText>
             <TextInput
-              style={[styles.input, {paddingVertical: 12, color: colors.textPrimary}]}
+              style={[styles.input, { paddingVertical: 12, color: colors.textPrimary }]}
               placeholder={t('order.enterCustomerName')}
               placeholderTextColor={colors.textMuted}
               value={customerName}
@@ -385,8 +385,9 @@ const AddOrder = () => {
                     style={styles.removeButton}
                     onPress={() => {
                       setFormData(prev => {
-                        const { [id]: removed, ...rest } = prev.measurements;
-                        return { ...prev, measurements: rest };
+                        const newMeasurements: Record<string, any> = { ...prev.measurements };
+                        delete newMeasurements[id];
+                        return { ...prev, measurements: newMeasurements };
                       });
                     }}
                   >

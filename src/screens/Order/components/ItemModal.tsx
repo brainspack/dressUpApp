@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, TextInput } from 'react-native';
+import { View, TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import LinearGradient from 'react-native-linear-gradient';
+// import LinearGradient from 'react-native-linear-gradient';
 import { RegularText, TitleText } from '../../../components/CustomText';
 import { OrderFormItem } from '../types/orderTypes';
 import { styles } from '../styles/AddOrderStyles';

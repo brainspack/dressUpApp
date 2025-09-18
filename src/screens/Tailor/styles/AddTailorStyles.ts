@@ -58,6 +58,9 @@ export const addTailorStyles = StyleSheet.create({
     borderWidth: 1, 
     borderColor: '#e5e7eb',
   },
+  cameraIcon: {
+    fontSize: 12,
+  },
   formProgressContainer: { 
     marginTop: 12, 
     width: '50%', 
@@ -94,5 +97,50 @@ export const addTailorStyles = StyleSheet.create({
   textArea: { 
     minHeight: 80, 
     textAlignVertical: 'top' 
+  },
+  labelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  phoneContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    backgroundColor: '#fff',
+  },
+  countryCode: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRightWidth: 1,
+    borderRightColor: '#e0e0e0',
+    backgroundColor: '#f8f9fa',
+  },
+  countryCodeText: {
+    fontSize: 16,
+    color: '#475569',
+    fontWeight: '500',
+  },
+  phoneInput: {
+    flex: 1,
+    borderWidth: 0,
+    margin: 0,
+    paddingLeft: 12,
+  },
+  inputError: {
+    borderColor: '#ef4444',
+    borderWidth: 1,
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  submitButton: {
+    margin: 16,
+    borderRadius: 12,
   },
 });

@@ -691,6 +691,7 @@ const Home = () => {
               <TitleText style={styles.userNameText}>{displayName}</TitleText>
             </View>
 
+
             {/* Image Carousel (wide, short height) */}
             <View style={styles.carouselWrapper}>
               <View style={styles.carouselClip}>

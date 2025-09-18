@@ -12,6 +12,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import { RegularText, TitleText } from '../../components/CustomText';
 import colors from '../../constants/colors';
+import { useToast } from '../../context/ToastContext';
 
 type TailorAssignedOrdersNavigationProp = NativeStackNavigationProp<
   TailorStackParamList,
@@ -42,6 +43,7 @@ const TailorAssignedOrders = () => {
   const route = useRoute<TailorAssignedOrdersRouteProp>();
   const { t } = useTranslation();
   const { accessToken } = useAuth();
+  const { showToast } = useToast();
   const [orders, setOrders] = useState<AssignedOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -141,7 +143,7 @@ const TailorAssignedOrders = () => {
               // Update order status to DELIVERED
               await apiService.updateOrderStatus(orderId, 'DELIVERED');
               
-              Alert.alert('Success', 'Order marked as completed!');
+              showToast('Order marked as completed!', 'success');
               
               // Refresh the list to remove completed order
               await fetchAssignedOrders();

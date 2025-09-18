@@ -1,11 +1,11 @@
 import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiService from '../../../services/api';
 import orderCache from '../../../services/orderCache';
 import { OrderFormData, OrderFormItem, OrderItem, Cloth } from '../types/orderTypes';
 import { statusMap } from '../constants/orderConstants';
+import { useToast } from '../../../context/ToastContext';
 
 export const useOrderHandlers = (
   formData: OrderFormData,
@@ -23,7 +23,7 @@ export const useOrderHandlers = (
   route: any
 ) => {
   const navigation = useNavigation();
-  const { t } = useTranslation();
+  const { showToast } = useToast();
 
   const handleAddItem = () => {
     if (!currentItem.name || currentItem.name.trim() === '') return;
@@ -95,30 +95,33 @@ export const useOrderHandlers = (
   const handleAddMeasurement = () => {
     const newMeasurement = {
       id: Date.now().toString(),
-      height: currentMeasurement.height === '' ? null : parseFloat(currentMeasurement.height),
-      chest: currentMeasurement.chest === '' ? null : parseFloat(currentMeasurement.chest),
-      waist: currentMeasurement.waist === '' ? null : parseFloat(currentMeasurement.waist),
-      hip: currentMeasurement.hip === '' ? null : parseFloat(currentMeasurement.hip),
-      shoulder: currentMeasurement.shoulder === '' ? null : parseFloat(currentMeasurement.shoulder),
-      sleeveLength: currentMeasurement.sleeveLength === '' ? null : parseFloat(currentMeasurement.sleeveLength),
-      inseam: currentMeasurement.inseam === '' ? null : parseFloat(currentMeasurement.inseam),
-      neck: currentMeasurement.neck === '' ? null : parseFloat(currentMeasurement.neck),
-      armhole: currentMeasurement.armhole === '' ? null : parseFloat(currentMeasurement.armhole),
-      bicep: currentMeasurement.bicep === '' ? null : parseFloat(currentMeasurement.bicep),
-      wrist: currentMeasurement.wrist === '' ? null : parseFloat(currentMeasurement.wrist),
-      outseam: currentMeasurement.outseam === '' ? null : parseFloat(currentMeasurement.outseam),
-      thigh: currentMeasurement.thigh === '' ? null : parseFloat(currentMeasurement.thigh),
-      knee: currentMeasurement.knee === '' ? null : parseFloat(currentMeasurement.knee),
-      calf: currentMeasurement.calf === '' ? null : parseFloat(currentMeasurement.calf),
-      ankle: currentMeasurement.ankle === '' ? null : parseFloat(currentMeasurement.ankle),
+      height: currentMeasurement.height === '' ? undefined : parseFloat(currentMeasurement.height),
+      chest: currentMeasurement.chest === '' ? undefined : parseFloat(currentMeasurement.chest),
+      waist: currentMeasurement.waist === '' ? undefined : parseFloat(currentMeasurement.waist),
+      hip: currentMeasurement.hip === '' ? undefined : parseFloat(currentMeasurement.hip),
+      shoulder: currentMeasurement.shoulder === '' ? undefined : parseFloat(currentMeasurement.shoulder),
+      sleeveLength: currentMeasurement.sleeveLength === '' ? undefined : parseFloat(currentMeasurement.sleeveLength),
+      inseam: currentMeasurement.inseam === '' ? undefined : parseFloat(currentMeasurement.inseam),
+      neck: currentMeasurement.neck === '' ? undefined : parseFloat(currentMeasurement.neck),
+      armhole: currentMeasurement.armhole === '' ? undefined : parseFloat(currentMeasurement.armhole),
+      bicep: currentMeasurement.bicep === '' ? undefined : parseFloat(currentMeasurement.bicep),
+      wrist: currentMeasurement.wrist === '' ? undefined : parseFloat(currentMeasurement.wrist),
+      outseam: currentMeasurement.outseam === '' ? undefined : parseFloat(currentMeasurement.outseam),
+      thigh: currentMeasurement.thigh === '' ? undefined : parseFloat(currentMeasurement.thigh),
+      knee: currentMeasurement.knee === '' ? undefined : parseFloat(currentMeasurement.knee),
+      calf: currentMeasurement.calf === '' ? undefined : parseFloat(currentMeasurement.calf),
+      ankle: currentMeasurement.ankle === '' ? undefined : parseFloat(currentMeasurement.ankle),
+    };
+
+    const prevMeasurements = (formData.measurements || {}) as Record<string, typeof newMeasurement>;
+    const updatedMeasurements: Record<string, typeof newMeasurement> = {
+      ...prevMeasurements,
+      [newMeasurement.id]: newMeasurement,
     };
 
     setFormData({
       ...formData,
-      measurements: {
-        ...(formData.measurements || {}),
-        [newMeasurement.id]: newMeasurement,
-      },
+      measurements: updatedMeasurements,
     });
 
     setCurrentMeasurement({
@@ -214,8 +217,9 @@ export const useOrderHandlers = (
       }
 
       const clothesWithMeasurements = formData.clothes.map((cloth, index) => {
-        const measurementId = Object.keys(formData.measurements)[index];
-        const measurement = measurementId ? formData.measurements[measurementId] : null;
+        const measurementKeys = Object.keys(formData.measurements || {});
+        const measurementId = measurementKeys[index];
+        const measurement = measurementId && formData.measurements ? formData.measurements[measurementId] : null;
 
         const clothData = {
           type: cloth.type || 'Unknown',
@@ -241,13 +245,13 @@ export const useOrderHandlers = (
       const totalPrice = clothesWithMeasurements.reduce((sum, cloth) => sum + cloth.price, 0);
       const totalCost = totalMaterialCost + totalPrice;
 
-      const payload = {
+      const payload: any = {
         customerId: customerId!,
         shopId: resolvedShopId,
         status: statusMap[formData.status] || 'PENDING',
-        orderType: formData.orderType.toUpperCase(),
+        orderType: (formData.orderType || 'stitching').toUpperCase(),
         notes: formData.notes || undefined,
-        alterationPrice: formData.alterationPrice ? parseFloat(formData.alterationPrice) : null,
+        alterationPrice: formData.alterationPrice ? parseFloat(String(formData.alterationPrice)) : null,
         orderDate: new Date().toISOString(),
         deliveryDate: formData.deliveryDate ? new Date(formData.deliveryDate).toISOString() : null,
         tailorName: formData.tailorName || null,
@@ -340,7 +344,7 @@ export const useOrderHandlers = (
         console.log('Persisting measurements failed (non-blocking):', e);
       }
       
-      Alert.alert('Success', 'Order added successfully!');
+      showToast('Order added successfully!', 'success');
       (navigation as any).navigate('OrderList');
     } catch (error) {
       console.error('Failed to add order:', error);

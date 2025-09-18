@@ -315,4 +315,13 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
   },
+  itemContainer: {
+    marginBottom: 12,
+  },
+  imageSection: {
+    marginTop: 8,
+  },
+  actionButton: {
+    borderRadius: 8,
+  },
 });

@@ -4,7 +4,8 @@ import apiService from '../../../services/api';
 
 export const handleClothImageUpload = async (
   setClothImages: (fn: (prev: (string | { url: string; fileKey: string; originalUrl?: string })[]) => (string | { url: string; fileKey: string; originalUrl?: string })[]) => void,
-  setCurrentCloth: (fn: (prev: any) => any) => void
+  setCurrentCloth: (fn: (prev: any) => any) => void,
+  showToast?: (msg: string, type?: 'success'|'error'|'warning'|'info') => void
 ) => {
   try {
     console.log('[AddOrder] Starting S3 image upload...');
@@ -107,7 +108,11 @@ export const handleClothImageUpload = async (
           }
         }
 
-        Alert.alert('Success', 'Image uploaded successfully!');
+        if (showToast) {
+          showToast('Image uploaded successfully!', 'success');
+        } else {
+          Alert.alert('Success', 'Image uploaded successfully!');
+        }
         
       } catch (uploadError: any) {
         console.error('[AddOrder] Order image upload error:', uploadError);
@@ -127,6 +132,12 @@ export const handleClothImageUpload = async (
     console.error('[AddOrder] Error picking image:', error);
     Alert.alert('Error', 'Failed to pick image. Please try again.');
   }
+};
+
+export const handleImageUploadSuccess = (showToast: (msg: string, type?: 'success'|'error'|'warning'|'info') => void) => {
+  try {
+    showToast('Image uploaded successfully!', 'success');
+  } catch {}
 };
 
 export const removeClothImage = (

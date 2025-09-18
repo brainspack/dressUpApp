@@ -2,7 +2,6 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useLanguage } from '../context/LanguageContext';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -189,7 +188,7 @@ const MainNavigator = () => {
         component={Home}
         options={{
           tabBarLabel: t('order.home'),
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
+          tabBarIcon: ({ color, size }) => (
             <Icon name="home" size={size} color={color} />
           ),
         }}
@@ -200,14 +199,14 @@ const MainNavigator = () => {
         options={{
           headerShown: false,
           tabBarLabel: t('order.customers'),
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
+          tabBarIcon: ({ color, size }) => (
             <Icon name="account-group" size={size} color={color} />
           ),
         }}
         listeners={({ navigation }) => ({
-          tabPress: (e) => {
+          tabPress: () => {
             // Reset Customers stack to CustomerList when tab is pressed
-            navigation.navigate('Customers', { screen: 'CustomerList' });
+            (navigation as any).navigate('Customers', { screen: 'CustomerList' });
           },
         })}
       />
@@ -217,14 +216,14 @@ const MainNavigator = () => {
         options={{
           headerShown: false,
           tabBarLabel: t('order.tailors'),
-          tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+          tabBarIcon: ({ color, size }) => (
             <Icon name="scissors-cutting" size={size} color={color} />
           ),
         }}
         listeners={({ navigation }) => ({
-          tabPress: (e) => {
+          tabPress: () => {
             // Reset Tailors stack to TailorList when tab is pressed
-            navigation.navigate('Tailors', { screen: 'TailorList' });
+            (navigation as any).navigate('Tailors', { screen: 'TailorList' });
           },
         })}
       />
@@ -234,14 +233,14 @@ const MainNavigator = () => {
         options={{
           headerShown: false,
           tabBarLabel: t('order.orders'),
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
+          tabBarIcon: ({ color, size }) => (
             <Icon name="clipboard-list" size={size} color={color} />
           ),
         }}
         listeners={({ navigation }) => ({
-          tabPress: (e) => {
+          tabPress: () => {
             // Reset Orders stack to OrderList when tab is pressed
-            navigation.navigate('Orders', { screen: 'OrderList' });
+            (navigation as any).navigate('Orders', { screen: 'OrderList' });
           },
         })}
       />
@@ -250,7 +249,7 @@ const MainNavigator = () => {
         component={ProfileScreen}
         options={{
           tabBarLabel: t('order.profile'),
-          tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
+          tabBarIcon: ({ color, size }) => (
             <Icon name="account" size={size} color={color} />
           ),
         }}
@@ -280,7 +279,7 @@ const SplashScreenWrapper = ({ navigation }: { navigation: any }) => {
 };
 
 // GetStarted Wrapper Component
-const GetStartedWrapper = ({ navigation }: { navigation: any }) => {
+const GetStartedWrapper = ({  }: { navigation: any }) => {
   console.log('GetStartedWrapper rendered');
   
   // GetStartedScreen uses useNavigation directly, so we don't need to pass props
@@ -289,7 +288,6 @@ const GetStartedWrapper = ({ navigation }: { navigation: any }) => {
 
 // Root Navigator
 const AppNavigatorInner = () => {
-  const { currentLanguage } = useLanguage();
   const { isAuthenticated, setIsAuthenticated, setAccessToken, loading } = useAuth();
 
   if (loading) {

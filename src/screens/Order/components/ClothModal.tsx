@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View,  TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -7,7 +7,8 @@ import { RegularText, TitleText } from '../../../components/CustomText';
 import Button from '../../../components/Button';
 import { styles } from '../styles/AddOrderStyles';
 import { handleClothImageUpload, removeClothImage } from '../utils/imageUploadUtils';
-import apiService from '../../../services/api';
+import { useToast } from '../../../context/ToastContext';
+// import apiService from '../../../services/api';
 
 interface ClothModalProps {
   isVisible: boolean;
@@ -29,6 +30,7 @@ export const ClothModal: React.FC<ClothModalProps> = ({
   onSave,
 }) => {
   const { t } = useTranslation();
+  const { showToast } = useToast();
 
   // Debug logging
   console.log('[ClothModal] Render state:', {
@@ -41,7 +43,7 @@ export const ClothModal: React.FC<ClothModalProps> = ({
   if (!isVisible) return null;
 
   const handleImageUpload = () => {
-    handleClothImageUpload(setClothImages, setCurrentCloth);
+    handleClothImageUpload(setClothImages, setCurrentCloth, showToast);
   };
 
   const handleRemoveImage = (index: number) => {
@@ -170,7 +172,7 @@ export const ClothModal: React.FC<ClothModalProps> = ({
                           style={styles.removeImageButton}
                           onPress={() => handleRemoveImage(index)}
                         >
-                          <Icon name="close" size={12} color="#ffffff" />
+                          <Icon name="close" size={12} color="#6B7280" />
                         </TouchableOpacity>
                       </View>
                     );

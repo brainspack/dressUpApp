@@ -10,13 +10,14 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { I18nextProvider } from 'react-i18next';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+// import { SafeAreaProvider } from 'react-native-safe-area-context';
 import i18n from './src/i18n/config';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
-import {  View, Text, Platform } from 'react-native';
+import { ToastProvider } from './src/context/ToastContext';
+import {  View, Text, StyleSheet } from 'react-native';
 import apiService from './src/services/api';
 import { useTranslation } from 'react-i18next';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+// import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import OfflineGate from './src/components/OfflineGate';
 
 // Import screens
@@ -44,7 +45,7 @@ import EditTailor from './src/screens/Tailor/EditTailor';
 
 // Import icons
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+// import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -66,10 +67,15 @@ const getTabBarIcon = (route: any, color: string, size: number) => {
   } else if (route.name === 'Account') {
     iconName = 'account';
   }
-  // Use theme color for Profile/Account tab
-  const iconColor = route.name === 'Account' ? '#2DBE91' : color;
-  return <Icon name={iconName} size={size} color={iconColor} />;
+  return <Icon name={iconName} size={size} color={color} />;
 };
+
+const StackHeaderTitle: React.FC<{ icon: string; label: string; marginLeft?: number }> = ({ icon, label, marginLeft = 8 }) => (
+  <View style={styles.headerRow}>
+    <Icon name={icon} size={30} color="#111827" />
+    <Text style={[styles.headerText, { marginLeft }]}>{label}</Text>
+  </View>
+);
 
 function OrderStackNavigator() {
   const { t } = useTranslation();
@@ -86,10 +92,7 @@ function OrderStackNavigator() {
           // Clear the title so iOS doesn't center it; render our header in headerLeft
           title: '',
           headerLeft: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="clipboard-list" size={30} color="#111827" />
-              <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('order.orders')}</Text>
-            </View>
+            <StackHeaderTitle icon="clipboard-list" label={t('order.orders')} />
           ),
         }}
       />
@@ -98,10 +101,7 @@ function OrderStackNavigator() {
         component={OrderDetails}
         options={({  }) => ({
           headerTitle: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="receipt" size={30} color="#111827" />
-              <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('order.orderDetails')}</Text>
-            </View>
+            <StackHeaderTitle icon="receipt" label={t('order.orderDetails')} />
           ),
           headerBackTitleVisible: false,
         })}
@@ -109,12 +109,9 @@ function OrderStackNavigator() {
       <OrderStack.Screen
         name="AddOrder"
         component={AddOrder}
-        options={({ navigation }) => ({
+        options={({ navigation: _navigation }) => ({
           headerTitle: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="plus-circle" size={30} color="#111827" />
-              <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>Create Order</Text>
-            </View>
+            <StackHeaderTitle icon="plus-circle" label="Create Order" />
           ),
           headerBackTitleVisible: false,
         })}
@@ -147,22 +144,16 @@ function CustomerStackNavigator() {
         options={{
           title: '',
           headerLeft: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' ,marginLeft: 10}}>
-              <Icon name="account-group" size={30} color="#111827" />
-              <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('customer.customers')}</Text>
-            </View>
+            <StackHeaderTitle icon="account-group" label={t('customer.customers')} marginLeft={10} />
           ),
         }}
       />
       <CustomerStack.Screen
         name="CustomerDetails"
         component={CustomerDetails}
-        options={({ navigation }) => ({
+        options={({ navigation: _navigation }) => ({
           headerTitle: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="account" size={30} color="#111827" />
-              <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('customer.customerDetails')}</Text>
-            </View>
+            <StackHeaderTitle icon="account" label={t('customer.customerDetails')} />
           ),
           // Use the native back button only; remove custom left icon to avoid duplicates
           headerBackTitleVisible: false,
@@ -171,12 +162,9 @@ function CustomerStackNavigator() {
       <CustomerStack.Screen
         name="AddCustomer"
         component={AddCustomer}
-        options={({ navigation }) => ({
+        options={({ navigation: _navigation }) => ({
           headerTitle: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="account-plus" size={30} color="#111827" />
-              <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('customer.addCustomer')}</Text>
-            </View>
+            <StackHeaderTitle icon="account-plus" label={t('customer.addCustomer')} />
           ),
           headerBackTitleVisible: false,
         })}
@@ -184,12 +172,9 @@ function CustomerStackNavigator() {
       <CustomerStack.Screen
         name="EditCustomer"
         component={EditCustomer}
-        options={({ navigation }) => ({
+        options={({ navigation: _navigation }) => ({
           headerTitle: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="pencil" size={30} color="#111827" />
-              <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>{t('customer.editCustomer')}</Text>
-            </View>
+            <StackHeaderTitle icon="pencil" label={t('customer.editCustomer')} />
           ),
           headerBackTitleVisible: false,
         })}
@@ -211,22 +196,16 @@ function TailorStackNavigator() {
         options={{
           title: '',
           headerLeft: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="scissors-cutting" size={30} color="#111827" />
-              <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>Tailors</Text>
-            </View>
+            <StackHeaderTitle icon="scissors-cutting" label="Tailors" />
           ),
         }}
       />
       <TailorStack.Screen
         name="TailorDetails"
         component={TailorDetails}
-        options={({ navigation }) => ({
+        options={({ navigation: _navigation }) => ({
           headerTitle: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="scissors-cutting" size={30} color="#111827" />
-              <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>Tailor Details</Text>
-            </View>
+            <StackHeaderTitle icon="scissors-cutting" label="Tailor Details" />
           ),
           headerBackTitleVisible: false,
         })}
@@ -234,12 +213,9 @@ function TailorStackNavigator() {
       <TailorStack.Screen
         name="AddTailor"
         component={AddTailor}
-        options={({ navigation }) => ({
+        options={({ navigation: _navigation }) => ({
           headerTitle: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="scissors-cutting" size={30} color="#111827" />
-              <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>Add Tailor</Text>
-            </View>
+            <StackHeaderTitle icon="scissors-cutting" label="Add Tailor" />
           ),
           headerBackTitleVisible: false,
         })}
@@ -247,12 +223,9 @@ function TailorStackNavigator() {
       <TailorStack.Screen
         name="EditTailor"
         component={EditTailor}
-        options={({ navigation }) => ({
+        options={({ navigation: _navigation }) => ({
           headerTitle: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="scissors-cutting" size={30} color="#111827" />
-              <Text style={{ marginLeft: 8, fontSize: 20, fontWeight: '700', color: '#111827' }}>Edit Tailor</Text>
-            </View>
+            <StackHeaderTitle icon="scissors-cutting" label="Edit Tailor" />
           ),
           headerBackTitleVisible: false,
         })}
@@ -263,11 +236,10 @@ function TailorStackNavigator() {
 
 
 function MainTabs() {
-  const { t } = useTranslation();
   return (
     <Tab.Navigator
       screenOptions={({route}) => ({
-        tabBarIcon: ({focused, color, size}) => getTabBarIcon(route, color, size),
+        tabBarIcon: ({ color, size}) => getTabBarIcon(route, color, size),
         tabBarActiveTintColor: '#2DBE91',
         tabBarInactiveTintColor: '#9AA0A6',
       })}>
@@ -358,10 +330,16 @@ function AppInner(): React.JSX.Element {
 function App(): React.JSX.Element {
   return (
     <AuthProvider>
-      <AppInner />
+      <ToastProvider>
+        <AppInner />
+      </ToastProvider>
     </AuthProvider>
   );
 }
 
 export default App;
 
+const styles = StyleSheet.create({
+  headerRow: { flexDirection: 'row', alignItems: 'center' },
+  headerText: { fontSize: 20, fontWeight: '700', color: '#111827' },
+});
