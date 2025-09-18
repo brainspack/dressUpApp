@@ -1,6 +1,7 @@
 /* eslint-disable no-trailing-spaces, react-native/no-inline-styles, no-new */
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, Image, ScrollView, Platform } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 // import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -121,6 +122,13 @@ const ProfileScreen = () => {
   useEffect(() => {
     setSelectedLanguage(currentLanguage);
   }, [currentLanguage]);
+
+  // Ensure default selected tab is always English when opening Profile
+  useFocusEffect(
+    React.useCallback(() => {
+      setSelectedLanguage('en'); // do not change app language; just the tab UI
+    }, [])
+  );
 
   const handleLanguageChange = async (newLanguage: string) => {
     console.log('Changing language from', selectedLanguage, 'to', newLanguage);
