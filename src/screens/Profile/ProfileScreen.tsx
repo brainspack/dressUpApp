@@ -30,6 +30,8 @@ const ProfileScreen = () => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
+  const [imageCacheKey, setImageCacheKey] = useState<number>(Date.now());
+  const [isImageLoading, setIsImageLoading] = useState<boolean>(false);
 
   useEffect(() => {
     // Load user data from context
@@ -43,6 +45,11 @@ const ProfileScreen = () => {
         ? userInfo.profileImage 
         : null;
       setProfileImage(profileImageValue);
+      
+      // Force refresh image cache on iOS when profile image changes
+      if (Platform.OS === 'ios' && profileImageValue) {
+        setImageCacheKey(Date.now());
+      }
       console.log('ProfileScreen: Loaded user data:', userInfo);
       console.log('ProfileScreen: Profile image from userInfo:', userInfo.profileImage);
       console.log('ProfileScreen: Profile image type:', typeof userInfo.profileImage);
@@ -76,6 +83,17 @@ const ProfileScreen = () => {
             const displayName = profileData.name && profileData.name.trim() ? profileData.name : 'User';
             setUserName(displayName);
             setTempUserName(displayName);
+            
+            // Set profile image with cache refresh for iOS
+            if (profileData.profileImage) {
+              setProfileImage(profileData.profileImage);
+              // Force refresh image cache on iOS
+              if (Platform.OS === 'ios') {
+                setImageCacheKey(Date.now());
+              }
+            } else {
+              setProfileImage(null);
+            }
             
             // If user doesn't have a name, automatically enter edit mode
             if (!profileData.name || !profileData.name.trim()) {
@@ -127,7 +145,12 @@ const ProfileScreen = () => {
   useFocusEffect(
     React.useCallback(() => {
       setSelectedLanguage('en'); // do not change app language; just the tab UI
-    }, [])
+      
+      // Force refresh profile image on iOS when screen comes into focus
+      if (Platform.OS === 'ios' && profileImage) {
+        setImageCacheKey(Date.now());
+      }
+    }, [profileImage])
   );
 
   const handleLanguageChange = async (newLanguage: string) => {
@@ -287,6 +310,11 @@ const ProfileScreen = () => {
               setProfileImage(uploadResult.profileImageUrl);
               console.log('ProfileScreen: Local state updated with backend URL:', uploadResult.profileImageUrl);
               
+              // Force refresh image cache on iOS
+              if (Platform.OS === 'ios') {
+                setImageCacheKey(Date.now());
+              }
+              
               // Clear local image URI since we now have the backend URL
               setLocalImageUri(null);
               
@@ -361,13 +389,17 @@ const ProfileScreen = () => {
             {profileImage && isValidImageUrl(profileImage) ? (
               <Image 
                 source={{ 
-                  uri: profileImage,
+                  uri: Platform.OS === 'ios' 
+                    ? `${profileImage}?cb=${imageCacheKey}`
+                    : profileImage,
                   cache: Platform.OS === 'ios' ? 'reload' : 'default'
                 }} 
                 style={styles.profileImageRounded}
                 resizeMode="cover"
+                key={`${profileImage}-${imageCacheKey}`}
                 onLoad={() => {
                   console.log('✅ ProfileScreen: Profile image loaded successfully:', profileImage);
+                  setIsImageLoading(false);
                   // Clear local image URI since S3 image loaded successfully
                   if (localImageUri && profileImage !== localImageUri) {
                     setLocalImageUri(null);
@@ -376,15 +408,20 @@ const ProfileScreen = () => {
                 onError={(error) => {
                   console.log('🚨 ProfileScreen: Profile image load error:', error.nativeEvent.error);
                   console.log('🚨 ProfileScreen: Failed image URI:', profileImage);
+                  setIsImageLoading(false);
                   
                   // Don't change state on error to avoid infinite loops
                   // Just log the error and let the user retry
                 }}
                 onLoadStart={() => {
-                  console.log('🔄 ProfileScreen: Starting to load image:', profileImage);
+                  if (!isImageLoading) {
+                    console.log('🔄 ProfileScreen: Starting to load image:', profileImage);
+                    setIsImageLoading(true);
+                  }
                 }}
                 onLoadEnd={() => {
                   console.log('🏁 ProfileScreen: Finished loading image:', profileImage);
+                  setIsImageLoading(false);
                 }}
               />
             ) : (
