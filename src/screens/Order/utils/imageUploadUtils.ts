@@ -5,7 +5,8 @@ import apiService from '../../../services/api';
 export const handleClothImageUpload = async (
   setClothImages: (fn: (prev: (string | { url: string; fileKey: string; originalUrl?: string })[]) => (string | { url: string; fileKey: string; originalUrl?: string })[]) => void,
   setCurrentCloth: (fn: (prev: any) => any) => void,
-  showToast?: (msg: string, type?: 'success'|'error'|'warning'|'info') => void
+  showToast?: (msg: string, type?: 'success'|'error'|'warning'|'info') => void,
+  clothType?: string
 ) => {
   try {
     console.log('[AddOrder] Starting S3 image upload...');
@@ -49,60 +50,49 @@ export const handleClothImageUpload = async (
         console.log('[AddOrder] Order image upload successful!');
         console.log('[AddOrder] Upload response:', uploadResponse);
 
-        // 2. Store image data with backend serving URL
+        // 2. Store image data using the S3 signed URL directly
         const s3Url = uploadResponse.s3Url;
         const fileKey = uploadResponse.fileKey;
+        const signedUrl = (uploadResponse as any).signedUrl || uploadResponse.orderImageUrl;
         
         if (fileKey) {
-          // Create backend serving URL for the image
-          const backendImageUrl = `http://192.168.29.79:3001/orders/s3/image/${encodeURIComponent(fileKey)}`;
-          
-          console.log('[AddOrder] Storing image data in state:', { 
-            s3Url: s3Url, 
-            fileKey: fileKey,
-            backendImageUrl: backendImageUrl
-          });
-          
-          // Use the backend serving URL for displaying the image
+          // Prefer short-lived signed URL for immediate display; fallback to s3Url
+          const displayUrl = signedUrl || s3Url;
+          console.log('[AddOrder] Storing image data in state:', { s3Url, fileKey, displayUrl });
           const imageData = {
-            url: backendImageUrl, // Use backend serving URL for displaying
+            url: displayUrl,
             fileKey: fileKey,
-            originalUrl: s3Url, // Store original S3 URL
+            originalUrl: s3Url,
             s3Url: s3Url
           };
           
           // Update both state variables to ensure synchronization
           setClothImages(prev => {
-            const newImages = [...prev, imageData];
-            console.log('[AddOrder] Updated clothImages:', newImages);
+            const exists = prev.some((img: any) => (img.fileKey || img.url) === (imageData.fileKey || imageData.url));
+            const newImages = exists ? prev : [...prev, imageData];
+            console.log('[AddOrder] Updated clothImages (deduped):', newImages);
             return newImages;
           });
           
           setCurrentCloth(prev => {
+            const exists = (prev.imageUrls || []).some((img: any) => (img.fileKey || img.url) === (imageData.fileKey || imageData.url));
             const updatedCloth = {
               ...prev,
-              imageUrls: [...prev.imageUrls, imageData]
+              imageUrls: exists ? prev.imageUrls : [...prev.imageUrls, imageData]
             };
-            console.log('[AddOrder] Updated currentCloth.imageUrls:', updatedCloth.imageUrls);
+            console.log('[AddOrder] Updated currentCloth.imageUrls (deduped):', updatedCloth.imageUrls);
             return updatedCloth;
           });
 
           // Save uploaded images to AsyncStorage for OrderSummary to retrieve
           try {
             const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-            // Get the current cloth type from the state
-            setCurrentCloth(currentCloth => {
-              const clothType = currentCloth.type || 'unknown';
-              AsyncStorage.getItem(`uploadedImages_${clothType}`).then((currentImages: string | null) => {
-                const existingImages = currentImages ? JSON.parse(currentImages) : [];
-                const updatedImages = [...existingImages, imageData];
-                AsyncStorage.setItem(`uploadedImages_${clothType}`, JSON.stringify(updatedImages));
-                console.log('[AddOrder] Saved images to AsyncStorage for type:', clothType);
-              }).catch((storageError: any) => {
-                console.error('[AddOrder] Error saving images to AsyncStorage:', storageError);
-              });
-              return currentCloth;
-            });
+            const keyType = (clothType && clothType.trim() !== '') ? clothType : 'unknown';
+            const currentImages = await AsyncStorage.getItem(`uploadedImages_${keyType}`);
+            const existingImages = currentImages ? JSON.parse(currentImages) : [];
+            const updatedImages = [...existingImages, imageData];
+            await AsyncStorage.setItem(`uploadedImages_${keyType}`, JSON.stringify(updatedImages));
+            console.log('[AddOrder] Saved images to AsyncStorage for type:', keyType);
           } catch (storageError) {
             console.error('[AddOrder] Error saving images to AsyncStorage:', storageError);
           }

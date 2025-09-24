@@ -58,7 +58,7 @@ export const useOrderHandlers = (
     });
   };
 
-  const handleAddCloth = () => {
+  const handleAddCloth = async () => {
     if (!currentCloth.type || currentCloth.type.trim() === '') return;
     
     const materialCostValue = currentCloth.materialCost === '' ? 0 : parseFloat(String(currentCloth.materialCost)) || 0;
@@ -74,10 +74,17 @@ export const useOrderHandlers = (
       videoUrls: currentCloth.videoUrls,
     };
 
+    const newClothes = [...formData.clothes, newCloth];
     setFormData({
       ...formData,
-      clothes: [...formData.clothes, newCloth],
+      clothes: newClothes,
     });
+    // Persist immediately so Summary can hydrate even if user skips Save Details
+    try {
+      const outfitId = (route.params as any)?.outfitId || `${route.params?.outfitType || 'ot'}-${Date.now()}`;
+      await AsyncStorage.setItem(`clothes_${outfitId}`, JSON.stringify(newClothes));
+      await AsyncStorage.setItem('lastClothes', JSON.stringify(newClothes));
+    } catch {}
 
     setCurrentCloth({
       id: '',
@@ -169,6 +176,12 @@ export const useOrderHandlers = (
         ['lastOutfitId', String(lastOutfitId)],
         ['lastMeasurements', JSON.stringify(measurementsArray)],
       ]);
+      // Persist clothes snapshot so OrderSummary can include color/fabric
+      try {
+        const clothesJson = JSON.stringify(formData.clothes || []);
+        await AsyncStorage.setItem(`clothes_${lastOutfitId}`, clothesJson);
+        await AsyncStorage.setItem('lastClothes', clothesJson);
+      } catch {}
       
       const breakdown = { id: String(lastOutfitId), itemsTotal, clothTotal: clothesTotal, notesText: formData.notes || '', orderType: formData.orderType };
       await AsyncStorage.setItem('lastBreakdown', JSON.stringify(breakdown));

@@ -44,6 +44,11 @@ const OrderSummary = () => {
       const lastOutfitId = await AsyncStorage.getItem('lastOutfitId');
       const lastMeasurements = await AsyncStorage.getItem('lastMeasurements');
       const lastBreakdownRaw = await AsyncStorage.getItem('lastBreakdown');
+      let lastClothesRaw = await AsyncStorage.getItem(`clothes_${lastOutfitId}`);
+      if (!lastClothesRaw) {
+        // Fallback if user navigated directly to summary without Save Details
+        lastClothesRaw = await AsyncStorage.getItem('lastClothes');
+      }
       let lastBreakdown: any = null;
       try { lastBreakdown = lastBreakdownRaw ? JSON.parse(lastBreakdownRaw) : null; } catch {}
       if ((lastPrice || lastMeasurements) && lastOutfitId) {
@@ -192,7 +197,19 @@ const OrderSummary = () => {
           processedImageUrls: processedImageUrls,
         });
 
-        const payload = {
+      // Hydrate color/fabric from saved clothes snapshot for THIS outfit
+      const draftRawForThisOutfit =
+        (await AsyncStorage.getItem(`clothes_${outfit.id}`)) ||
+        (await AsyncStorage.getItem('lastClothes')) ||
+        null;
+      const clothesFromDraft = (() => {
+        try {
+          const parsed = draftRawForThisOutfit ? JSON.parse(draftRawForThisOutfit) : [];
+          return Array.isArray(parsed) ? parsed : [];
+        } catch { return []; }
+      })();
+
+      const payload = {
           customerId: customerIdToUse!,
           shopId: shopId,
           status: 'PENDING',
@@ -205,13 +222,30 @@ const OrderSummary = () => {
           // Send separate price vs materialCost so details page shows both correctly
           clothes: [{
             type: outfit.type,
-            color: '',
-            fabric: '',
+            // Prefer saved draft (AddOrder) values if available
+            color: (() => {
+              const m = clothesFromDraft.find((c: any) => c?.type === outfit.type);
+              const v = m?.color ?? (outfit as any)?.color;
+              return v && String(v).trim() !== '' ? v : undefined;
+            })(),
+            fabric: (() => {
+              const m = clothesFromDraft.find((c: any) => c?.type === outfit.type);
+              const v = m?.fabric ?? (outfit as any)?.fabric;
+              return v && String(v).trim() !== '' ? v : undefined;
+            })(),
             materialCost: isAlteration ? 0 : materialToSend,
             price: isAlteration ? discountedTotal : Math.max(0, (priceToSend + materialToSend) - appliedDiscount) - materialToSend,
             designNotes: '',
             imageUrls: processedImageUrls, // Include the uploaded images
             videoUrls: [],
+          }],
+          // Costs: send a single combined row so backend persists in cost table
+          costs: [{
+            materialCost: isAlteration ? 0 : materialToSend,
+            laborCost: isAlteration ? Math.max(0, priceToSend - appliedDiscount) : Math.max(0, (priceToSend + materialToSend) - appliedDiscount) - materialToSend,
+            totalCost: isAlteration
+              ? Math.max(0, priceToSend - appliedDiscount)
+              : Math.max(0, (priceToSend + materialToSend) - appliedDiscount),
           }],
           alterationPrice: isAlteration ? Math.max(0, priceToSend - appliedDiscount) : undefined,
           notes: JSON.stringify({
@@ -221,6 +255,17 @@ const OrderSummary = () => {
               price: isAlteration ? Math.max(0, priceToSend - appliedDiscount) : Math.max(0, (priceToSend + materialToSend) - appliedDiscount) - materialToSend,
               materialCost: isAlteration ? 0 : materialToSend,
               orderType: (isAlteration ? 'alteration' : 'stitching'),
+              // Ensure backend enrichment sees these even if body.clothes misses them
+              color: (() => {
+                const m = clothesFromDraft.find((c: any) => c?.type === outfit.type);
+                const v = m?.color ?? (outfit as any)?.color;
+                return v && String(v).trim() !== '' ? v : undefined;
+              })(),
+              fabric: (() => {
+                const m = clothesFromDraft.find((c: any) => c?.type === outfit.type);
+                const v = m?.fabric ?? (outfit as any)?.fabric;
+                return v && String(v).trim() !== '' ? v : undefined;
+              })(),
             }],
             orderType: (isAlteration ? 'alteration' : 'stitching'),
             advanceApplied: appliedDiscount,
@@ -228,7 +273,34 @@ const OrderSummary = () => {
         };
 
         try {
+          try {
+            const token = (apiService as any).getAccessToken?.() || null;
+            console.log('=== MOBILE FRONTEND: POST /orders - payload ===');
+            // Lightweight table for quick glance
+            try {
+              console.table("BYE",(payload.clothes || []).map((c: any) => ({ type: c.type, color: c.color, fabric: c.fabric, price: c.price, materialCost: c.materialCost, images: (c.imageUrls||[]).length })));
+            } catch {}
+            console.log(JSON.stringify(payload, null, 2));
+            if (token) {
+              // Some consoles truncate long strings; print in chunks
+              const chunkSize = 256;
+              const total = Math.ceil(token.length / chunkSize);
+              console.log(`Authorization (Bearer) token FULL (length=${token.length}):`);
+              for (let i = 0; i < total; i++) {
+                const start = i * chunkSize;
+                const end = Math.min(start + chunkSize, token.length);
+                console.log(`TOKEN[${i + 1}/${total}]:`, token.slice(start, end));
+              }
+            } else {
+              console.log('Authorization token: <none>');
+            }
+          } catch {}
           const created: any = await apiService.createOrder(payload);
+          console.log('=== MOBILE FRONTEND: POST /orders - response ===');
+          try {
+            console.table("hiiiii",(created?.clothes || []).map((c: any) => ({ type: c.type, color: c.color, fabric: c.fabric, price: c.price, materialCost: c.materialCost, images: (c.imageUrls||[]).length })));
+          } catch {}
+          console.log(JSON.stringify(created, null, 2));
           // After creating order, persist measurements separately so they are retrievable via API
           try {
             const orderId = created?.id || created?.order?.id;

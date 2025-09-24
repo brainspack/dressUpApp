@@ -43,7 +43,8 @@ export const ClothModal: React.FC<ClothModalProps> = ({
   if (!isVisible) return null;
 
   const handleImageUpload = () => {
-    handleClothImageUpload(setClothImages, setCurrentCloth, showToast);
+    const typeHint = (currentCloth?.type || '').trim();
+    handleClothImageUpload(setClothImages, setCurrentCloth, showToast, typeHint);
   };
 
   const handleRemoveImage = (index: number) => {

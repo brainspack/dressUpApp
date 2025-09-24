@@ -253,17 +253,23 @@ const ProfileScreen = () => {
 
   // Removed unused testImageUrl helper
 
-  // Validate image URL format
+  // Validate image source string for RN Image (support http(s), file, content, asset-library, ph, data URIs)
   const isValidImageUrl = (url: string | null): boolean => {
     if (!url || typeof url !== 'string') return false;
-    
-    // Check if it's a valid URL format
-    try {
-      new URL(url);
+    const lower = url.toLowerCase();
+    if (
+      lower.startsWith('http://') ||
+      lower.startsWith('https://') ||
+      lower.startsWith('file://') ||
+      lower.startsWith('content://') ||
+      lower.startsWith('asset-library://') ||
+      lower.startsWith('ph://') ||
+      lower.startsWith('data:')
+    ) {
       return true;
-    } catch {
-      return false;
     }
+    // Fallback: attempt URL parsing, but don't block non-standard schemes
+    try { new URL(url); return true; } catch { return true; }
   };
 
 

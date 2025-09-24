@@ -7,15 +7,15 @@ import { Order } from '../types/order';
 // For physical devices, use your computer's IP address
 // Try multiple URLs for Android emulator compatibility
 const getAndroidApiUrl = () => {
-  // For Android emulator, try 10.0.2.2 first (standard emulator IP)
-  // If that fails, the app can fallback to the actual machine IP
-  return 'http://10.0.2.2:3001';
+  // Backend is on port 3000 locally
+  return 'http://10.0.2.2:3000';
+  // return 'https://dressup-api.brainspack.com';
 };
 
 const API_BASE_URL = __DEV__ 
   ? Platform.OS === 'android' 
     ? getAndroidApiUrl()
-    : 'http://localhost:3001'
+    : 'http://localhost:3000'
   : 'http://your-production-api-url.com';
 
 export interface AuthResponse {
@@ -83,6 +83,11 @@ class ApiService {
     this.accessToken = token;
   }
 
+  // Debug utility: preview or access token for logs
+  getAccessToken(): string | null {
+    return this.accessToken;
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -91,9 +96,8 @@ class ApiService {
     const urlsToTry = Platform.OS === 'android' && __DEV__ 
       ? [
           `${this.baseUrl}${endpoint}`,  // Primary: 10.0.2.2 (Android emulator standard)
-          `http://192.168.29.79:3001${endpoint}`,  // Fallback: actual machine IP
-          `http://localhost:3001${endpoint}`,  // Last resort: localhost
-          `http://127.0.0.1:3001${endpoint}`  // Final fallback: loopback
+          `http://localhost:3000${endpoint}`,  // Localhost
+          `http://127.0.0.1:3000${endpoint}`  // Loopback
         ]
       : [`${this.baseUrl}${endpoint}`];
 
@@ -106,7 +110,7 @@ class ApiService {
         console.log('Token starts with:', this.accessToken.substring(0, 20) + '...');
       }
       
-      const headers: Record<string, string> = {};
+      const headers: Record<string, string> = { 'X-Client': 'mobile-app' };
 
       // Only set Content-Type for non-FormData requests
       if (!(options.body instanceof FormData)) {
@@ -128,6 +132,7 @@ class ApiService {
           ...headers,
           ...options.headers,
         },
+        cache: 'no-store',
         ...options,
       };
 
@@ -180,7 +185,7 @@ class ApiService {
     // If all URLs failed, throw the last error with helpful information
     if (lastError instanceof TypeError && lastError.message.includes('Network request failed')) {
       const triedUrls = urlsToTry.map(url => `• ${url}`).join('\n');
-      throw new Error(`Network connection failed after trying ${urlsToTry.length} URLs:\n${triedUrls}\n\nPlease ensure:\n1. Backend server is running on port 3001\n2. Android emulator can access your machine's network\n3. Firewall allows connections on port 3001`);
+      throw new Error(`Network connection failed after trying ${urlsToTry.length} URLs:\n${triedUrls}\n\nPlease ensure:\n1. Backend server is running on port 3000\n2. Android emulator can access your machine's network\n3. Firewall allows connections on port 3000`);
     }
     throw lastError || new Error('All API endpoints failed');
   }
@@ -587,13 +592,17 @@ class ApiService {
         throw new Error(uploadResponse.error || 'Failed to upload profile image');
       }
 
-      // Create backend serving URL for the profile image
+      // Prefer signed view URL from backend (short-lived but good for immediate view)
+      const signedUrl = (uploadResponse as any).viewUrl;
+      // Create backend serving URL as stable fallback
       const backendImageKey = uploadResponse.fileKey ?? '';
-      const backendImageUrl = `http://192.168.29.79:3001/users/profile/image/${encodeURIComponent(backendImageKey)}`;
-      
+      const backendImageUrl = backendImageKey
+        ? `${this.baseUrl.replace(/\/$/, '')}/users/profile/image/${encodeURIComponent(backendImageKey)}`
+        : undefined;
+
       return {
         success: true,
-        profileImageUrl: backendImageUrl,
+        profileImageUrl: signedUrl || backendImageUrl,
         fileKey: uploadResponse.fileKey ?? undefined,
         s3Url: uploadResponse.publicUrl
       };

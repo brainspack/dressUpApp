@@ -107,9 +107,17 @@ android {
     }
 }
 
+// Exclude any legacy support libs that may be pulled transitively
+configurations.all {
+    exclude group: 'com.android.support', module: 'support-v4'
+    exclude group: 'com.android.support', module: 'support-compat'
+}
+
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+    // Ensure androidx.core is present and preferred
+    implementation 'androidx.core:core:1.12.0'
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

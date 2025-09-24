@@ -78,8 +78,13 @@ const OrderDetails = () => {
     };
 
     try {
-      console.log('Fetching order details for ID:', route.params.orderId);
+      console.log('=== MOBILE FRONTEND: GET /orders/:id - request ===', route.params.orderId);
       const data = await apiService.getOrderById(route.params.orderId);
+      console.log('=== MOBILE FRONTEND: GET /orders/:id - response ===');
+      try {
+        console.table((data?.clothes || []).map((c: any) => ({ type: c.type, color: c.color, fabric: c.fabric, price: c.price, materialCost: c.materialCost, images: (c.imageUrls||[]).length })));
+      } catch {}
+      try { console.log(JSON.stringify(data, null, 2)); } catch {}
       const myShopId = decodeShopIdFromJwt(accessToken);
       const orderShopId = (data as any)?.shopId || (data as any)?.customer?.shopId || null;
       if (myShopId && orderShopId && myShopId !== orderShopId) {
@@ -435,8 +440,9 @@ const OrderDetails = () => {
             const directMs = (clothForItem as any)?.measurements;
             const directArray = Array.isArray(directMs) ? directMs : (directMs ? [directMs] : []);
 
-            // Try parsing measurements from notes -> clothes[]
+            // Try parsing measurements and attributes from notes -> clothes[]
             let notesMs: any[] = [];
+            let notesClothMeta: any = null;
             try {
               let np = null;
               if (order.notes) {
@@ -454,6 +460,7 @@ const OrderDetails = () => {
               if (!matchFromNotes && isSingleCloth && Array.isArray(np?.clothes) && np!.clothes!.length > 0) {
                 matchFromNotes = np!.clothes![0];
               }
+              notesClothMeta = matchFromNotes || null;
               if (matchFromNotes?.measurements) {
                 notesMs = Array.isArray(matchFromNotes.measurements) ? matchFromNotes.measurements : [matchFromNotes.measurements];
               }
@@ -464,12 +471,14 @@ const OrderDetails = () => {
 
             // Try cache snapshot as last resort
             let cacheMs: any[] = [];
+            let cacheClothMeta: any = null;
             try {
               const snap = orderCache.getSnapshot(order.id);
               let matchFromCache = snap?.clothes?.find((c: any) => c?.type === clothForItem?.type);
               if (!matchFromCache && isSingleCloth && Array.isArray(snap?.clothes) && snap!.clothes!.length > 0) {
                 matchFromCache = snap!.clothes![0];
               }
+              cacheClothMeta = matchFromCache || null;
               if (matchFromCache?.measurements) {
                 cacheMs = Array.isArray(matchFromCache.measurements) ? matchFromCache.measurements : [matchFromCache.measurements];
               }
@@ -621,12 +630,16 @@ const OrderDetails = () => {
                   <View style={styles.subCard}>
                     <TitleText style={styles.subTitle}>Cloth</TitleText>
                     <View style={styles.subRow}><RegularText style={styles.subKey}>Type</RegularText><RegularText style={styles.subVal}>{clothForItem.type || '-'}</RegularText></View>
-                    {!!clothForItem.color && (
-                      <View style={styles.subRow}><RegularText style={styles.subKey}>Color</RegularText><RegularText style={styles.subVal}>{clothForItem.color}</RegularText></View>
-                    )}
-                    {!!clothForItem.fabric && (
-                      <View style={styles.subRow}><RegularText style={styles.subKey}>Fabric</RegularText><RegularText style={styles.subVal}>{clothForItem.fabric}</RegularText></View>
-                    )}
+                    {(() => {
+                      const displayColor = (clothForItem as any)?.color || notesClothMeta?.color || cacheClothMeta?.color || '-';
+                      const displayFabric = (clothForItem as any)?.fabric || notesClothMeta?.fabric || cacheClothMeta?.fabric || '-';
+                      return (
+                        <>
+                          <View style={styles.subRow}><RegularText style={styles.subKey}>Color</RegularText><RegularText style={styles.subVal}>{String(displayColor)}</RegularText></View>
+                          <View style={styles.subRow}><RegularText style={styles.subKey}>Fabric</RegularText><RegularText style={styles.subVal}>{String(displayFabric)}</RegularText></View>
+                        </>
+                      );
+                    })()}
                     {order.orderType === 'ALTERATION' ? (
                       <>
                         <View style={styles.subRow}><RegularText style={styles.subKey}>Material Cost</RegularText><RegularText style={styles.subVal}>₹0.00</RegularText></View>
