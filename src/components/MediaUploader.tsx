@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Platform, Alert } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { pickImageFromUser } from '../utils/imagePicker';
 
 interface MediaUploaderProps {
   label?: string;
@@ -26,12 +27,9 @@ const MediaUploader = ({
   const pickMedia = async () => {
     try {
       setLoading(true);
-      const result = await launchImageLibrary({
-        mediaType: type === 'video' ? 'video' : 'photo',
-        quality: 1,
-      });
-      if (!result.didCancel && result.assets && result.assets[0].uri) {
-        onChange(result.assets[0].uri);
+      const result = await pickImageFromUser({ mediaType: type === 'video' ? 'video' : 'photo', quality: 1 });
+      if (!result.canceled && result.asset?.uri) {
+        onChange(result.asset.uri);
       }
     } catch (error) {
       console.error('Error picking media:', error);

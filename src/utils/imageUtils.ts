@@ -1,26 +1,26 @@
 import { launchImageLibrary } from 'react-native-image-picker';
+import { pickImageFromUser } from './imagePicker';
 import { Alert } from 'react-native';
 
 // Image upload handler for cloth images with base64 data
 export const handleClothImageUpload = async (): Promise<string | null> => {
   try {
     console.log('[ImageUtils] Starting image upload...');
-    const result = await launchImageLibrary({
+    const result = await pickImageFromUser({
       mediaType: 'photo',
-      quality: 0.5, // Reduced quality to reduce file size
-      maxWidth: 800, // Resize image to max 800px width
-      maxHeight: 800, // Resize image to max 800px height
-      includeBase64: true, // Enable base64 for database storage
+      quality: 0.5,
+      maxWidth: 800,
+      maxHeight: 800,
+      includeBase64: true,
     });
 
     console.log('[ImageUtils] Image picker result:', {
-      didCancel: result.didCancel,
-      assets: result.assets?.length || 0,
-      errorMessage: result.errorMessage
+      canceled: result.canceled,
+      hasAsset: !!result.asset,
     });
 
-    if (!result.didCancel && result.assets && result.assets[0]) {
-      const asset = result.assets[0];
+    if (!result.canceled && result.asset) {
+      const asset = result.asset;
       console.log('[ImageUtils] Selected image asset:', {
         uri: asset.uri,
         hasBase64: !!asset.base64,

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { pickImageFromUser } from '../../utils/imagePicker';
 import LanguageSelector from '../../components/LanguageSelector';
 import { useTranslation } from 'react-i18next';
 import useLanguageStore from '../../store/languageStore';
@@ -19,21 +20,9 @@ const AccountScreen = () => {
   // Image picker handler
   const pickImage = async () => {
     try {
-      const result = await launchImageLibrary({
-        mediaType: 'photo',
-        maxWidth: 512,
-        maxHeight: 512,
-        quality: 0.7,
-      });
-      
-      if (result.didCancel) return;
-      if (result.errorCode) {
-        Alert.alert('Error', result.errorMessage || 'Image picker error');
-        return;
-      }
-      if (result.assets && result.assets.length > 0) {
-        setAvatar(result.assets[0].uri || avatar);
-      }
+      const result = await pickImageFromUser({ mediaType: 'photo', maxWidth: 512, maxHeight: 512, quality: 0.7 });
+      if (result.canceled || !result.asset?.uri) return;
+      setAvatar(result.asset.uri);
     } catch (error) {
       Alert.alert('Error', 'Failed to pick image');
     }

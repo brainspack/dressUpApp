@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, ScrollView, TextInput, Alert } from 'react-native';
 import { addCustomerStyles as styles } from './styles';
 import colors from '../../constants/colors';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import apiService from '../../services/api';
-import { launchImageLibrary } from 'react-native-image-picker';
+// image upload disabled on this screen
 // import LinearGradient from 'react-native-linear-gradient';
 import Button from '../../components/Button';
 import { useTranslation } from 'react-i18next';
@@ -45,8 +45,6 @@ const AddCustomer = () => {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [_uploadProgress, setUploadProgress] = useState(0);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
   const [form, setForm] = useState<CustomerForm>({
     name: '',
     phone: '',
@@ -85,8 +83,7 @@ const AddCustomer = () => {
         phone: '',
         address: '',
       });
-      setProfileImage(null);
-      setUploadProgress(0);
+      // image selection removed
       setErrors({});
       setTouched({
         name: false,
@@ -169,45 +166,18 @@ const AddCustomer = () => {
     return nameValid && phoneValid && addressValid;
   }, [form.name, form.phone, form.address, validationRules]);
 
-  // Compute form completion progress (image + name + valid phone + address)
+  // Compute form completion progress (name + valid phone + address)
   const baseCompleted =
-    (profileImage ? 1 : 0) +
     (form.name.trim() ? 1 : 0) +
     (validationRules.phone.pattern.test(form.phone.trim()) ? 1 : 0);
-  const baseTotal = 3;
+  const baseTotal = 2;
   // Allow up to 80% before address, then 100% once address is filled
   let formProgress = Math.round((baseCompleted / baseTotal) * 80);
   if (form.address.trim()) {
     formProgress = 100;
   }
 
-  const handleImageUpload = async () => {
-    try {
-      const result = await launchImageLibrary({
-        mediaType: 'photo',
-        quality: 0.8,
-        includeBase64: false,
-      });
-
-      if (!result.didCancel && result.assets && result.assets[0].uri) {
-        setProfileImage(result.assets[0].uri);
-        // Simulate upload progress
-        setUploadProgress(0);
-        const interval = setInterval(() => {
-          setUploadProgress(prev => {
-            if (prev >= 100) {
-              clearInterval(interval);
-              return 100;
-            }
-            return prev + 10;
-          });
-        }, 100);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert(t('common.error'), t('customer.imageUploadFailed'));
-    }
-  };
+  // image selection removed
 
   const handleFieldChange = (field: keyof CustomerForm, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -285,31 +255,17 @@ const AddCustomer = () => {
 
 
       <View style={styles.formCard}>
-        {/* Image Uploader */}
+        {/* Static avatar circle (no upload) */}
         <View style={styles.imageUploaderContainer}>
-          <TouchableOpacity style={styles.imageUploader} onPress={handleImageUpload}>
-            {profileImage ? (
-              <Image source={{ uri: profileImage }} style={styles.profileImage} />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <Icon name="person" size={56} color="#fff" />
-              </View>
-            )}
-            <View style={styles.cameraBadge}>
-              <Icon name="photo-camera" size={16} color={colors.textSecondary as string} />
+          <View style={styles.imageUploader}>
+            <View style={styles.imagePlaceholder}>
+              <Icon name="person" size={56} color="#fff" />
             </View>
-          </TouchableOpacity>
+          </View>
           {/* Form progress line */}
           <View style={styles.formProgressContainer}>
             <View style={styles.formProgressTrack}>
-              <View style={[styles.formProgressFill, { width: `${formProgress}%` }]}>
-                {/* <LinearGradient
-              colors={['#229B73', '#1a8f6e', '#000000']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={StyleSheet.absoluteFillObject}
-            /> */}
-              </View>
+              <View style={[styles.formProgressFill, { width: `${formProgress}%` }]} />
             </View>
           </View>
         </View>

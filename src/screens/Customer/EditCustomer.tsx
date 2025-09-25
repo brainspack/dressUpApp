@@ -6,6 +6,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import apiService from '../../services/api';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { pickImageFromUser } from '../../utils/imagePicker';
 import Button from '../../components/Button';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../context/ToastContext';
@@ -93,22 +94,13 @@ const EditCustomer = () => {
 
   const handleImageUpload = async () => {
     try {
-      const result = await launchImageLibrary({
-        mediaType: 'photo',
-        quality: 0.8,
-        includeBase64: false,
-      });
-
-      if (!result.didCancel && result.assets && result.assets[0].uri) {
-        setProfileImage(result.assets[0].uri);
-        // Simulate upload progress
+      const result = await pickImageFromUser({ mediaType: 'photo', quality: 0.8 });
+      if (!result.canceled && result.asset?.uri) {
+        setProfileImage(result.asset.uri);
         setUploadProgress(0);
         const interval = setInterval(() => {
           setUploadProgress(prev => {
-            if (prev >= 100) {
-              clearInterval(interval);
-              return 100;
-            }
+            if (prev >= 100) { clearInterval(interval); return 100; }
             return prev + 10;
           });
         }, 100);

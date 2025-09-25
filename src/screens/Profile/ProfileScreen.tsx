@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import Button from '../../components/Button';
 import { profileScreenStyles as styles } from './styles/ProfileScreenStyles';
 import { launchImageLibrary, ImagePickerResponse, MediaType } from 'react-native-image-picker';
+import { pickImageFromUser } from '../../utils/imagePicker';
 import apiService from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 
@@ -273,82 +274,42 @@ const ProfileScreen = () => {
   };
 
 
-  const handleChangePhoto = () => {
-    const options = {
-      mediaType: 'photo' as MediaType,
-      includeBase64: false,
-      maxHeight: 2000,
-      maxWidth: 2000,
-      quality: 0.8 as const,
-    };
-
-    launchImageLibrary(options, async (response: ImagePickerResponse) => {
-      if (response.didCancel || response.errorMessage) {
-        return;
-      }
-
-      if (response.assets && response.assets.length > 0) {
-        const asset = response.assets[0];
-        const imageUri = asset.uri;
-        const fileName = asset.fileName || `profile_${Date.now()}.jpg`;
-        const fileType = asset.type || 'image/jpeg';
-
-        if (imageUri && fileName && fileType) {
-          try {
-            console.log('🚀 ProfileScreen: Starting S3 profile image upload...');
-            
-            // Show loading state
-            setLocalImageUri(imageUri); // Store local image URI
-            setProfileImage(imageUri); // Show local image immediately
-            
-            // Upload to S3
-            const uploadResult = await apiService.uploadProfileImage(imageUri, fileName, fileType);
-            
-            if (uploadResult.success && uploadResult.profileImageUrl) {
-              console.log('🚀 ProfileScreen: Profile image uploaded to S3 successfully!');
-              console.log('🚀 ProfileScreen: S3 URL received:', uploadResult.profileImageUrl);
-              
-              // Update profile with S3 URL
-              await updateUserProfile({ profileImage: uploadResult.profileImageUrl });
-              console.log('ProfileScreen: Profile image updated successfully with S3 URL');
-              
-              // Update local state with backend serving URL
-              setProfileImage(uploadResult.profileImageUrl);
-              console.log('ProfileScreen: Local state updated with backend URL:', uploadResult.profileImageUrl);
-              
-              // Force refresh image cache on iOS
-              if (Platform.OS === 'ios') {
-                setImageCacheKey(Date.now());
-              }
-              
-              // Clear local image URI since we now have the backend URL
-              setLocalImageUri(null);
-              
-              showToast('Profile image updated successfully!', 'success');
-            } else {
-              console.error('ProfileScreen: Upload failed:', uploadResult);
-              throw new Error(uploadResult.error || 'Failed to upload profile image');
-            }
-          } catch (error: any) {
-            console.error('ProfileScreen: Error uploading profile image:', error);
-            
-            // Revert to previous image on error
-            setProfileImage(userInfo?.profileImage || null);
-            
-            let errorMessage = 'Failed to upload profile image. Please try again.';
-            if (error.message && error.message.includes('Access Denied')) {
-              errorMessage = 'AWS S3 Access Denied. Please check your AWS permissions.';
-            } else if (error.message && error.message.includes('403')) {
-              errorMessage = 'Permission denied. Please contact administrator to fix AWS S3 permissions.';
-            }
-            
-            Alert.alert('Upload Error', errorMessage);
+  const handleChangePhoto = async () => {
+    const result = await pickImageFromUser({ mediaType: 'photo', includeBase64: false, maxHeight: 2000, maxWidth: 2000, quality: 0.8 });
+    if (result.canceled || !result.asset) return;
+    const asset = result.asset;
+    const imageUri = asset.uri;
+    const fileName = asset.fileName || `profile_${Date.now()}.jpg`;
+    const fileType = asset.type || 'image/jpeg';
+    if (imageUri && fileName && fileType) {
+      try {
+        setLocalImageUri(imageUri);
+        setProfileImage(imageUri);
+        const uploadResult = await apiService.uploadProfileImage(imageUri, fileName, fileType);
+        if (uploadResult.success && uploadResult.profileImageUrl) {
+          await updateUserProfile({ profileImage: uploadResult.profileImageUrl });
+          setProfileImage(uploadResult.profileImageUrl);
+          if (Platform.OS === 'ios') {
+            setImageCacheKey(Date.now());
           }
+          setLocalImageUri(null);
+          showToast('Profile image updated successfully!', 'success');
         } else {
-          Alert.alert('Error', 'Invalid image data. Please try again.');
+          throw new Error(uploadResult.error || 'Failed to upload profile image');
         }
+      } catch (error: any) {
+        setProfileImage(userInfo?.profileImage || null);
+        let errorMessage = 'Failed to upload profile image. Please try again.';
+        if (error.message && error.message.includes('Access Denied')) {
+          errorMessage = 'AWS S3 Access Denied. Please check your AWS permissions.';
+        } else if (error.message && error.message.includes('403')) {
+          errorMessage = 'Permission denied. Please contact administrator to fix AWS S3 permissions.';
+        }
+        Alert.alert('Upload Error', errorMessage);
       }
-    });
+    } else {
+      Alert.alert('Error', 'Invalid image data. Please try again.');
+    }
   };
 
   console.log('Current language in render:', currentLanguage, 'Selected:', selectedLanguage);

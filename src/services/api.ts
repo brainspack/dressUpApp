@@ -8,8 +8,8 @@ import { Order } from '../types/order';
 // Try multiple URLs for Android emulator compatibility
 const getAndroidApiUrl = () => {
   // Backend is on port 3000 locally
-  return 'http://10.0.2.2:3000';
-  // return 'https://dressup-api.brainspack.com';
+  // return 'http://10.0.2.2:3000';
+  return 'https://dressup-api.brainspack.com';
 };
 
 const API_BASE_URL = __DEV__ 

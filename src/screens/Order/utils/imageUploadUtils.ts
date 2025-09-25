@@ -1,5 +1,6 @@
 import { Alert } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { pickImageFromUser } from '../../../utils/imagePicker';
 import apiService from '../../../services/api';
 
 export const handleClothImageUpload = async (
@@ -10,7 +11,7 @@ export const handleClothImageUpload = async (
 ) => {
   try {
     console.log('[AddOrder] Starting S3 image upload...');
-    const result = await launchImageLibrary({
+    const result = await pickImageFromUser({
       mediaType: 'photo',
       quality: 0.8,
       maxWidth: 1200,
@@ -19,13 +20,12 @@ export const handleClothImageUpload = async (
     });
 
     console.log('[AddOrder] Image picker result:', {
-      didCancel: result.didCancel,
-      assets: result.assets?.length || 0,
-      errorMessage: result.errorMessage
+      canceled: result.canceled,
+      hasAsset: !!result.asset,
     });
 
-    if (!result.didCancel && result.assets && result.assets[0]) {
-      const asset = result.assets[0];
+    if (!result.canceled && result.asset) {
+      const asset = result.asset;
       console.log('[AddOrder] Selected image asset:', {
         uri: asset.uri,
         fileName: asset.fileName,

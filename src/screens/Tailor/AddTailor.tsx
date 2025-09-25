@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, Image, ScrollView } from 'react-native';
+import { View, Text, TextInput, Alert, ScrollView } from 'react-native';
 import { addTailorStyles as styles } from './styles';
 import apiService from '../../services/api';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Button from '../../components/Button';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { pickImageFromUser } from '../../utils/imagePicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -45,8 +46,7 @@ const AddTailor = () => {
   const navigation = useNavigation();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [_uploadProgress, setUploadProgress] = useState(0);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [/* removedUploadProgress */] = useState(0);
   const [form, setForm] = useState<TailorForm>({
     name: '',
     mobileNumber: '',
@@ -85,8 +85,7 @@ const AddTailor = () => {
         mobileNumber: '',
         address: '',
       });
-      setProfileImage(null);
-      setUploadProgress(0);
+      // image selection removed
       setErrors({});
       setTouched({
         name: false,
@@ -169,23 +168,7 @@ const AddTailor = () => {
     return nameValid && mobileValid && addressValid;
   }, [form.name, form.mobileNumber, form.address, validationRules]);
 
-  const handleImageUpload = async () => {
-    try {
-      const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.8 });
-      if (!result.didCancel && result.assets && result.assets[0].uri) {
-        setProfileImage(result.assets[0].uri);
-        setUploadProgress(0);
-        const interval = setInterval(() => {
-          setUploadProgress(prev => {
-            if (prev >= 100) { clearInterval(interval); return 100; }
-            return prev + 10;
-          });
-        }, 100);
-      }
-    } catch (e) {
-      Alert.alert(t('common.error'), t('tailor.imageUploadFailed'));
-    }
-  };
+  // image selection removed
 
   const handleFieldChange = (field: keyof TailorForm, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -262,12 +245,11 @@ const AddTailor = () => {
     }
   };
 
-  // Compute form completion progress (image + name + valid mobile + address)
+  // Compute form completion progress (name + valid mobile + address)
   const baseCompleted =
-    (profileImage ? 1 : 0) +
     (form.name.trim() ? 1 : 0) +
     (validationRules.mobileNumber.pattern.test(form.mobileNumber.trim()) ? 1 : 0);
-  const baseTotal = 3;
+  const baseTotal = 2;
   // Allow up to 80% before address, then 100% once address is filled
   let formProgress = Math.round((baseCompleted / baseTotal) * 80);
   if (form.address.trim()) {
@@ -277,20 +259,13 @@ const AddTailor = () => {
   return (
     <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.formCard}>
+        {/* Static avatar circle (no upload) */}
         <View style={styles.imageUploaderContainer}>
-          <TouchableOpacity style={styles.imageUploader} onPress={handleImageUpload}>
-            {profileImage ? (
-              <Image source={{ uri: profileImage }} style={styles.profileImage} />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <Text style={styles.imagePlaceholderText}>TL</Text>
-              </View>
-            )}
-            <View style={styles.cameraBadge}>
-              <Text style={styles.cameraIcon}>📷</Text>
+          <View style={styles.imageUploader}>
+            <View style={styles.imagePlaceholder}>
+              <Text style={styles.imagePlaceholderText}>TL</Text>
             </View>
-          </TouchableOpacity>
-
+          </View>
           {/* Progress line */}
           <View style={styles.formProgressContainer}>
             <View style={styles.formProgressTrack}>
