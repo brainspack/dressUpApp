@@ -3,20 +3,14 @@ import { Platform } from 'react-native';
 declare const __DEV__: boolean;
 import { Order } from '../types/order';
 
-// For Android emulator, use 10.0.2.2 to access host machine for iOS simulator, use localhost
-// For physical devices, use your computer's IP address
-// Try multiple URLs for Android emulator compatibility
-const getAndroidApiUrl = () => {
-  // Backend is on port 3000 locally
-  // return 'http://10.0.2.2:3000';
-  return 'https://dressup-api.brainspack.com';
-};
+// For local development nuances across platforms
+// Android emulator can use 10.0.2.2 to reach host; however, we're defaulting to the hosted API to keep both platforms in sync
+const getHostedApiUrl = () => 'https://dressup-api.brainspack.com';
 
-const API_BASE_URL = __DEV__ 
-  ? Platform.OS === 'android' 
-    ? getAndroidApiUrl()
-    : 'http://localhost:3000'
-  : 'http://your-production-api-url.com';
+// Use the same hosted API for both Android and iOS in dev to avoid localhost mismatch on iOS simulator
+const API_BASE_URL = __DEV__
+  ? getHostedApiUrl()
+  : getHostedApiUrl();
 
 export interface AuthResponse {
   message: string;
@@ -92,14 +86,8 @@ class ApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    // For Android, try multiple URLs if the first one fails
-    const urlsToTry = Platform.OS === 'android' && __DEV__ 
-      ? [
-          `${this.baseUrl}${endpoint}`,  // Primary: 10.0.2.2 (Android emulator standard)
-          `http://localhost:3000${endpoint}`,  // Localhost
-          `http://127.0.0.1:3000${endpoint}`  // Loopback
-        ]
-      : [`${this.baseUrl}${endpoint}`];
+    // In dev we now use hosted API for both platforms to keep data consistent
+    const urlsToTry = [`${this.baseUrl}${endpoint}`];
 
     let lastError: Error | null = null;
 
@@ -132,7 +120,6 @@ class ApiService {
           ...headers,
           ...options.headers,
         },
-        cache: 'no-store',
         ...options,
       };
 
@@ -592,9 +579,8 @@ class ApiService {
         throw new Error(uploadResponse.error || 'Failed to upload profile image');
       }
 
-      // Prefer signed view URL from backend (short-lived but good for immediate view)
+      // Prefer backend serving URL (stable), fallback to short-lived signed URL
       const signedUrl = (uploadResponse as any).viewUrl;
-      // Create backend serving URL as stable fallback
       const backendImageKey = uploadResponse.fileKey ?? '';
       const backendImageUrl = backendImageKey
         ? `${this.baseUrl.replace(/\/$/, '')}/users/profile/image/${encodeURIComponent(backendImageKey)}`
@@ -602,7 +588,7 @@ class ApiService {
 
       return {
         success: true,
-        profileImageUrl: signedUrl || backendImageUrl,
+        profileImageUrl: backendImageUrl || signedUrl,
         fileKey: uploadResponse.fileKey ?? undefined,
         s3Url: uploadResponse.publicUrl
       };

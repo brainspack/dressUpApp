@@ -287,8 +287,10 @@ const ProfileScreen = () => {
         setProfileImage(imageUri);
         const uploadResult = await apiService.uploadProfileImage(imageUri, fileName, fileType);
         if (uploadResult.success && uploadResult.profileImageUrl) {
-          await updateUserProfile({ profileImage: uploadResult.profileImageUrl });
-          setProfileImage(uploadResult.profileImageUrl);
+          // Prefer stable backend URL so iOS cache doesn't expire instantly
+          const stableUrl = uploadResult.profileImageUrl;
+          await updateUserProfile({ profileImage: stableUrl });
+          setProfileImage(stableUrl);
           if (Platform.OS === 'ios') {
             setImageCacheKey(Date.now());
           }

@@ -102,6 +102,37 @@ export const pickImageFromUser = async (options?: UnifiedPickerOptions): Promise
         cameraType: options?.cameraType ?? 'back',
         saveToPhotos: options?.saveToPhotos ?? false,
       });
+      if ((res as any).errorCode) {
+        const code = (res as any).errorCode;
+        if (code === 'camera_unavailable') {
+          if (Platform.OS === 'ios') {
+            // Auto-fallback to Gallery on iOS Simulator
+            const message = 'Camera is not available on the iOS Simulator. Opening Gallery instead.';
+            Alert.alert('Camera unavailable', message, [{ text: 'OK', onPress: () => {} }], { cancelable: true });
+            const gallery = await launchImageLibrary({
+              mediaType: options?.allowVideo ? 'mixed' : 'photo',
+              quality: options?.quality ?? 0.8,
+              includeBase64: options?.includeBase64,
+              maxWidth: options?.maxWidth,
+              maxHeight: options?.maxHeight,
+              selectionLimit: 1,
+            });
+            if (!gallery.didCancel && gallery.assets && gallery.assets[0]) {
+              resolve({ canceled: false, asset: gallery.assets[0] });
+            } else {
+              resolve({ canceled: true });
+            }
+            return;
+          }
+          Alert.alert('Camera unavailable', 'Camera is not available on this device.');
+        } else if (code === 'permission') {
+          Alert.alert('Permission required', 'Camera permission is needed to take a photo.');
+        } else {
+          Alert.alert('Error', (res as any).errorMessage || 'Failed to open camera.');
+        }
+        resolve({ canceled: true });
+        return;
+      }
       if (res.didCancel || !res.assets || !res.assets[0]) {
         resolve({ canceled: true });
       } else {
