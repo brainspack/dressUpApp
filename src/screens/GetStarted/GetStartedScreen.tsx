@@ -75,7 +75,7 @@ const GetStartedScreen = () => {
                 
                 <TouchableOpacity onPress={handleLogin}>
                   <RegularText style={styles.loginText}>
-                    {t('auth.alreadyAccountLogin')}
+                    {t('auth.alreadyAccount')} <RegularText style={styles.loginLink}>Log In</RegularText>
                   </RegularText>
                 </TouchableOpacity>
               </View>

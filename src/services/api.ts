@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+// import { Platform } from 'react-native';
 // Ensure __DEV__ is known to TypeScript in environments where it's not declared by RN types
 declare const __DEV__: boolean;
 import { Order } from '../types/order';

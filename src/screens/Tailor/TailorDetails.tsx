@@ -294,19 +294,6 @@ const TailorDetails = () => {
           />
         </View>
 
-        {/* Bottom Row - 1 full width button */}
-        <Button
-          variant="gradient"
-          title="View Assigned Orders"
-          height={56}
-          gradientColors={['#229B73', '#1a8f6e', '#000000']}
-          icon={<Icon name="assignment" size={24} color="#fff" />}
-          onPress={() => navigation.navigate('TailorAssignedOrders', { 
-            tailorId: tailor.id, 
-            tailorName: tailor.name 
-          })}
-          style={{ borderRadius: 12 }}
-        />
       </View>
     </ScrollView>
   );

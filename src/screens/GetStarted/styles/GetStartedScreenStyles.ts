@@ -19,7 +19,7 @@ export const getStartedScreenStyles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 40,
+    paddingBottom: 80, // Reduced from 40 to 20 to shift content up
   },
   titleContainer: {
     alignItems: 'center',
@@ -55,7 +55,7 @@ export const getStartedScreenStyles = StyleSheet.create({
     paddingHorizontal: 30,
     paddingVertical: 16,
     borderRadius: 30,
-    marginBottom: 30,
+    marginBottom: 20, // Reduced from 30 to 15
     minWidth: 300,
     minHeight:60,
     alignItems: 'center',
@@ -79,9 +79,9 @@ export const getStartedScreenStyles = StyleSheet.create({
     gap: 8, // Reduced spacing from 15 to 8
   },
   createAccountText: {
-    color: 'rgba(255, 255, 255, 0.9)', // White text with opacity
+    color: 'rgba(255, 255, 255, 0.8)', // White text with opacity
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     textAlign: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 1, height: 1 },
@@ -98,7 +98,7 @@ export const getStartedScreenStyles = StyleSheet.create({
   },
   loginLink: {
     color: 'rgba(85, 173, 136, 0.9)', // Green link with opacity
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize:18,
     textDecorationLine: 'underline',
   },

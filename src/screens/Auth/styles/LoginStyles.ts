@@ -8,8 +8,8 @@ export const loginStyles = StyleSheet.create({
   overlay: { flex: 1 },
   backArrow: { fontSize: 24, color: '#333', margin: 20 },
   waveSvg: { position: 'absolute', top: 70, left: 0 },
-  formWrapper: { flex: 1, paddingHorizontal: 24, paddingTop: 320 },
-  loginTitle: { color: '#ffffff', fontSize: 32, fontWeight: '700', marginBottom: 40 },
+  formWrapper: { flex: 1, paddingHorizontal: 24, paddingTop: 280 }, // Reduced from 320 to 280
+  loginTitle: { color: '#ffffff', fontSize: 32, fontWeight: '700', marginBottom: 15 }, // Reduced from 40 to 20
   formContainer: { marginBottom: 24 },
   inputContainer: { marginBottom: 10 },
   forgotPassword: { alignSelf: 'flex-start', marginTop: 6 },

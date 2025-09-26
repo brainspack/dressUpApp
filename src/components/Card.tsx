@@ -36,7 +36,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(11, 34, 69, 0.85)',
+    backgroundColor: 'rgba(11, 34, 69, 0.95)', // Made darker from 0.85 to 0.95
+    borderRadius: 16, // Added explicit border radius to match the card
   },
   stats: {
     padding: 20,

@@ -127,7 +127,7 @@ export const styles = StyleSheet.create({
   orderItem: {
     backgroundColor: colors.white,
     borderRadius: 16,
-    padding: 20,
+    padding: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

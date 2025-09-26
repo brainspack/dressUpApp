@@ -881,11 +881,11 @@ const Home = () => {
             <View style={styles.statsGrid}>
               <Card variant="stats" style={styles.statsCard}>
                 <Icon name="tape-measure" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
-                <RegularText style={styles.statsLabell}>Progress: {activeTailors}</RegularText>
+                <RegularText style={styles.statsLabell}>{t('order.active')}: {activeTailors}</RegularText>
               </Card>
               <Card variant="stats" style={styles.statsCard}>
                 <Icon name="account-off" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
-                <RegularText style={styles.statsLabell}>{t('status.pending')}: {inactiveTailors}</RegularText>
+                <RegularText style={styles.statsLabell}>{t('order.idle')}: {inactiveTailors}</RegularText>
               </Card>
               <Card variant="stats" style={styles.statsCard}>
                 <Icon name="account-hard-hat" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
@@ -897,7 +897,7 @@ const Home = () => {
             <View style={styles.orderStatsGrid}>
               <Card variant="stats" style={styles.orderStatsCard}>
                 <Icon name="account-clock" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
-                <RegularText style={styles.statsLabel}>Progress: {activeCustomers}</RegularText>
+                <RegularText style={styles.statsLabel}>{t('order.progress')}: {activeCustomers}</RegularText>
               </Card>
               <Card variant="stats" style={styles.orderStatsCard}>
                 <Icon name="account-check" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
@@ -923,17 +923,17 @@ const Home = () => {
               </Card>
               <Card variant="stats" style={styles.orderStatsCard}>
                 <Icon name="clipboard-clock" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
-                <RegularText style={styles.statsLabel}>{t('order.activeOrders')}: {shopStats?.totalActiveOrders ?? '0'}</RegularText>
+                <RegularText style={styles.statsLabel}>{t('order.active')}: {shopStats?.totalActiveOrders ?? '0'}</RegularText>
               </Card>
             </View>
             <View style={styles.orderStatsGrid}>
               <Card variant="stats" style={styles.orderStatsCard}>
                 <Icon name="progress-clock" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
-                <RegularText style={styles.statsLabel}>{t('order.pendingOrders')}: {shopStats?.pendingOrders ?? '0'}</RegularText>
+                <RegularText style={styles.statsLabel}>{t('order.pending')}: {shopStats?.pendingOrders ?? '0'}</RegularText>
               </Card>
               <Card variant="stats" style={styles.orderStatsCard}>
                 <Icon name="check-circle" size={28} color="#2DBE91" style={[styles.statsIcon, { opacity: 1, backgroundColor: 'transparent' }]} />
-                <RegularText style={styles.statsLabel}>{t('order.completedOrders')}: {shopStats?.deliveredOrders ?? '0'}</RegularText>
+                <RegularText style={styles.statsLabel}>{t('order.completed')}: {shopStats?.deliveredOrders ?? '0'}</RegularText>
               </Card>
             </View>
           </View>

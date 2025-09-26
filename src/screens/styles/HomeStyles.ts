@@ -26,7 +26,7 @@ export const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     paddingTop: 48,
     paddingBottom: 16,
-    paddingHorizontal: 20,
+    paddingHorizontal: 30, // Increased from 20 to 24 for more right margin
     height: 170,
     position: 'relative',
     overflow: 'hidden',
@@ -40,11 +40,13 @@ export const styles = StyleSheet.create({
   },
   headerTextContainer: {
     zIndex: 1,
+    paddingRight: 20, // Added small padding to ensure text doesn't get cut off
   },
   headerProfileRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    paddingRight: 10, // Added extra padding on the right to prevent cutoff
   },
   avatarContainer: {
     width: 40,
@@ -219,11 +221,11 @@ export const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   chartsWrapper: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16, // Reduced from 20 to 16 to give more space
     marginBottom: 16,
   },
   chartCard: {
-    padding: 16,
+    padding: 13, // Reduced from 16 to 12 to give more space for content
     marginBottom: 12,
   },
   chartTitle: {
@@ -242,6 +244,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+    paddingRight: 10, // Added small padding to prevent dropdown cutoff
   },
   chartRange: {
     alignItems: 'flex-end',
