@@ -21,7 +21,7 @@ import { useToast } from '../../context/ToastContext';
 const ProfileScreen = () => {
   // const navigation = useNavigation();
   const { t, i18n } = useTranslation();
-  const { currentLanguage, setAppLanguage } = useLanguage();
+  const { currentLanguage, setAppLanguage, isLoading } = useLanguage();
   const { showToast } = useToast();
   const { accessToken, setAccessToken, setIsAuthenticated, userInfo, updateUserProfile } = useAuth();
   
@@ -30,7 +30,8 @@ const ProfileScreen = () => {
   const [tempUserName, setTempUserName] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
+  // Initialize from i18n to avoid brief mismatch while context hydrates
+  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language || currentLanguage);
   const [imageCacheKey, setImageCacheKey] = useState<number>(Date.now());
   const [isImageLoading, setIsImageLoading] = useState<boolean>(false);
 
@@ -138,20 +139,25 @@ const ProfileScreen = () => {
     loadUserProfile();
   }, [accessToken, currentLanguage, i18n, setAppLanguage]);
 
+  // Keep tab selection in sync with the real app language once hydration completes
   useEffect(() => {
-    setSelectedLanguage(currentLanguage);
-  }, [currentLanguage]);
+    if (!isLoading) {
+      setSelectedLanguage(currentLanguage);
+    }
+  }, [currentLanguage, isLoading]);
 
-  // Ensure default selected tab is always English when opening Profile
+  // Sync selected language with current app language when opening Profile
   useFocusEffect(
     React.useCallback(() => {
-      setSelectedLanguage('en'); // do not change app language; just the tab UI
+      if (!isLoading) {
+        setSelectedLanguage(currentLanguage); // Sync with actual app language
+      }
       
       // Force refresh profile image on iOS when screen comes into focus
       if (Platform.OS === 'ios' && profileImage) {
         setImageCacheKey(Date.now());
       }
-    }, [profileImage])
+    }, [profileImage, currentLanguage, isLoading])
   );
 
   const handleLanguageChange = async (newLanguage: string) => {

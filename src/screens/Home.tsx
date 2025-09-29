@@ -820,11 +820,11 @@ const Home = () => {
                         { name: t('home.alterations'), population: alterCount + pieEpsilon, color: colors.charts.pieAlterations, legendFontColor: colors.textPrimary as string, legendFontSize: 12 },
                       ]}
                       width={pieChartWidth}
-                      height={150}
+                      height={130}
                       chartConfig={chartConfig as any}
                       accessor="population"
                       backgroundColor="transparent"
-                      paddingLeft="16"
+                      paddingLeft="0"
                       hasLegend={false}
                       center={[20, 0]}
                       style={{ marginLeft: 0 }}

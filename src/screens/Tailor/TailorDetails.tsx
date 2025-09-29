@@ -1,6 +1,6 @@
 /* eslint-disable react-native/no-inline-styles, no-trailing-spaces */
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { tailorDetailsStyles as styles } from './styles';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,6 +10,7 @@ import apiService from '../../services/api';
 import Button from '../../components/Button';
 import { TailorStackParamList } from '../../navigation/types';
 import { RegularText, TitleText } from '../../components/CustomText';
+import { useTranslation } from 'react-i18next';
 import colors from '../../constants/colors';
 import { useToast } from '../../context/ToastContext';
 
@@ -34,45 +35,59 @@ interface Shop {
 
 type TailorDetailsNavigationProp = NativeStackNavigationProp<TailorStackParamList, 'TailorDetails'>;
 
-const TailorDetails = () => {
+const TailorDetails = React.memo(() => {
+  const { t } = useTranslation();
   const navigation = useNavigation<TailorDetailsNavigationProp>();
   const route = useRoute<RouteProp<TailorStackParamList, 'TailorDetails'>>();
   const { tailorId } = route.params;
   const { showToast } = useToast();
-  const [tailor, setTailor] = useState<Tailor | null>(null);
-  const [shop, setShop] = useState<Shop | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [data, setData] = useState<{
+    tailor: Tailor | null;
+    shop: Shop | null;
+    loading: boolean;
+    shopLoading: boolean;
+  }>({
+    tailor: null,
+    shop: null,
+    loading: true,
+    shopLoading: false,
+  });
+  const fetchedShopIdRef = useRef<string | null>(null);
 
-  const fetchShopDetails = useCallback(async (shopId?: string) => {
-    const targetShopId = shopId || tailor?.shopId;
-    if (!targetShopId) { return; }
+  const fetchShopDetails = useCallback(async (shopId: string) => {
+    if (!shopId || fetchedShopIdRef.current === shopId) { 
+      return; 
+    }
+    
     try {
-      console.log('[TailorDetails] Fetching shop details for shopId:', targetShopId);
-      const shopData = await apiService.getShopById(targetShopId);
+      console.log('[TailorDetails] Fetching shop details for shopId:', shopId);
+      setData(prev => ({ ...prev, shopLoading: true }));
+      const shopData = await apiService.getShopById(shopId);
       console.log('[TailorDetails] Received shop data:', shopData);
-      setShop(shopData);
+      setData(prev => ({ ...prev, shop: shopData, shopLoading: false }));
+      fetchedShopIdRef.current = shopId;
     } catch (error) {
       console.error('Error fetching shop details:', error);
+      setData(prev => ({ ...prev, shopLoading: false }));
     }
-  }, [tailor?.shopId]);
+  }, []);
 
   const fetchTailorDetails = useCallback(async () => {
     try {
       console.log('[TailorDetails] Fetching tailor details for ID:', tailorId);
-      setLoading(true);
+      setData(prev => ({ ...prev, loading: true }));
       const tailorData = await apiService.getTailorById(tailorId);
       console.log('[TailorDetails] Received tailor data:', tailorData);
-      setTailor(tailorData);
-      if (tailorData?.shopId) {
-        console.log('[TailorDetails] Fetching shop details for shopId:', tailorData.shopId);
-        fetchShopDetails(tailorData.shopId);
+      setData(prev => ({ ...prev, tailor: tailorData, loading: false }));
+      
+      // Fetch shop details if needed
+      if (tailorData?.shopId && fetchedShopIdRef.current !== tailorData.shopId) {
+        await fetchShopDetails(tailorData.shopId);
       }
     } catch (error) {
       console.error('Error fetching tailor details:', error);
       Alert.alert('Error', 'Failed to fetch tailor details');
-    } finally {
-      setLoading(false);
+      setData(prev => ({ ...prev, loading: false }));
     }
   }, [tailorId, fetchShopDetails]);
 
@@ -80,38 +95,15 @@ const TailorDetails = () => {
     fetchTailorDetails();
   }, [fetchTailorDetails]);
 
-
-
-  // Refresh data when screen comes back into focus (e.g., after editing)
-  useFocusEffect(
-    React.useCallback(() => {
-      console.log('[TailorDetails] Screen focused, refreshing data for tailorId:', tailorId);
-      if (tailorId) {
-        // Force a fresh fetch when screen comes into focus
-        setTailor(null);
-        setShop(null);
-        fetchTailorDetails();
-      }
-    }, [tailorId, fetchTailorDetails])
-  );
-
-  // fetchShopDetails defined above
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await fetchTailorDetails();
-      if (tailor?.shopId) {
-        await fetchShopDetails();
-      }
-    } catch (error) {
-      console.error('Error refreshing data:', error);
-    } finally {
-      setRefreshing(false);
+  // Reset shop ref when tailor changes
+  useEffect(() => {
+    if (data.tailor?.shopId !== fetchedShopIdRef.current) {
+      fetchedShopIdRef.current = null;
     }
-  };
+  }, [data.tailor?.shopId]);
 
-  const handleDelete = async () => {
+
+  const handleDelete = useCallback(async () => {
     Alert.alert(
       'Delete Tailor',
       'Are you sure you want to delete this tailor? This action cannot be undone.',
@@ -132,18 +124,18 @@ const TailorDetails = () => {
         },
       ]
     );
-  };
+  }, [tailorId, showToast, navigation]);
 
-  const getTailorNumber = (tailorObj: Tailor) => {
+  const getTailorNumber = React.useCallback((tailorObj: Tailor) => {
     if (tailorObj.serialNumber) {
       return `TLR-${String(tailorObj.serialNumber).padStart(4, '0')}`;
     }
     // Fallback: generate from ID hash
     const hash = Math.abs(Array.from(tailorObj.id).reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0)) % 10000;
     return `TLR-${String(hash).padStart(4, '0')}`;
-  };
+  }, []);
 
-  const getShopNumber = (shopObj: Shop | null) => {
+  const getShopNumber = React.useCallback((shopObj: Shop | null) => {
     if (shopObj?.serialNumber) {
       return `SHP-${String(shopObj.serialNumber).padStart(4, '0')}`;
     }
@@ -153,9 +145,24 @@ const TailorDetails = () => {
       return `SHP-${String(hash).padStart(4, '0')}`;
     }
     return 'SHP-0000';
-  };
+  }, []);
 
-  if (loading) {
+  // Memoize tailor number to prevent flickering
+  const tailorNumber = React.useMemo(() => {
+    return data.tailor ? getTailorNumber(data.tailor) : '';
+  }, [data.tailor, getTailorNumber]);
+
+  // Memoize shop display text to prevent flickering
+  const shopDisplayText = React.useMemo(() => {
+    if (data.shopLoading) {
+      return 'Loading...';
+    }
+    const shopName = data.shop?.name || 'Unknown Shop';
+    const shopNumber = getShopNumber(data.shop);
+    return `${shopName} (${shopNumber})`;
+  }, [data.shop, data.shopLoading, getShopNumber]);
+
+  if (data.loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.brand} />
@@ -164,7 +171,7 @@ const TailorDetails = () => {
     );
   }
 
-  if (!tailor) {
+  if (!data.tailor) {
     return (
       <View style={styles.errorContainer}>
         <Icon name="error" size={64} color={colors.danger} />
@@ -186,14 +193,6 @@ const TailorDetails = () => {
     <ScrollView 
       style={styles.container} 
       showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={[colors.brand]}
-          tintColor={colors.brand}
-        />
-      }
     >
       {/* Profile Header Card */}
       <View style={styles.profileCard}>
@@ -206,15 +205,15 @@ const TailorDetails = () => {
           <View style={styles.profileIconContainer}>
             <Icon name="content-cut" size={48} color="#ffffff" />
           </View>
-          <TitleText style={styles.tailorName}>{tailor.name}</TitleText>
-          <RegularText style={styles.tailorNumber}>{getTailorNumber(tailor)}</RegularText>
+          <TitleText style={styles.tailorName}>{data.tailor.name}</TitleText>
+          <RegularText style={styles.tailorNumber}>{tailorNumber}</RegularText>
         </LinearGradient>
       </View>
 
       {/* Tailor Information Section */}
       <View style={styles.infoSection}>
         <View style={styles.sectionHeader}>
-          <TitleText style={styles.sectionTitle}>Contact Information</TitleText>
+          <TitleText style={styles.sectionTitle}>{t('tailor.contactInformation') || 'Contact Information'}</TitleText>
           <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
             <Icon name="delete" size={24} color="#ef4444" />
           </TouchableOpacity>
@@ -226,8 +225,8 @@ const TailorDetails = () => {
             <Icon name="phone" size={20} color={colors.brand} />
           </View>
           <View style={styles.infoContent}>
-            <RegularText style={styles.infoLabel}>Phone Number</RegularText>
-            <RegularText style={styles.infoValue}>{tailor.mobileNumber}</RegularText>
+            <RegularText style={styles.infoLabel}>{t('tailor.phoneNumber') || 'Phone Number'}</RegularText>
+            <RegularText style={styles.infoValue}>{data.tailor.mobileNumber}</RegularText>
           </View>
         </View>
 
@@ -237,9 +236,9 @@ const TailorDetails = () => {
             <Icon name="location-on" size={20} color={colors.brand} />
           </View>
           <View style={styles.infoContent}>
-            <RegularText style={styles.infoLabel}>Address</RegularText>
+            <RegularText style={styles.infoLabel}>{t('tailor.address') || 'Address'}</RegularText>
             <RegularText style={styles.infoValue}>
-              {tailor.address || 'No address provided'}
+              {data.tailor.address || (t('tailor.noAddress') || 'No address provided')}
             </RegularText>
           </View>
         </View>
@@ -250,9 +249,9 @@ const TailorDetails = () => {
             <Icon name="store" size={20} color={colors.brand} />
           </View>
           <View style={styles.infoContent}>
-            <RegularText style={styles.infoLabel}>Shop</RegularText>
+            <RegularText style={styles.infoLabel}>{t('tailor.shop') || 'Shop'}</RegularText>
             <RegularText style={styles.infoValue}>
-              {shop?.name || 'Unknown Shop'} ({getShopNumber(shop)})
+              {shopDisplayText}
             </RegularText>
           </View>
         </View>
@@ -264,29 +263,29 @@ const TailorDetails = () => {
         <View style={styles.topButtonRow}>
           <Button
             variant="gradient"
-            title="Edit Tailor"
+            title={t('tailor.editTailor') || 'Edit Tailor'}
             height={56}
             gradientColors={['#229B73', '#1a8f6e', '#000000']}
             icon={<Icon name="edit" size={24} color="#fff" />}
-            onPress={() => navigation.navigate('EditTailor', { tailorId: tailor.id })}
+            onPress={() => navigation.navigate('EditTailor', { tailorId: data.tailor!.id })}
             style={styles.topButton}
           />
           
           <Button
             variant="light"
-            title="Assign Orders"
+            title={t('order.assign') || 'Assign Orders'}
             height={56}
             onPress={() => {
               const root = (navigation as any).getParent?.();
               if (root) {
                 root.navigate('Orders', {
                   screen: 'OrderList',
-                  params: { tailorId: tailor.id, tailorName: tailor.name }
+                  params: { tailorId: data.tailor!.id, tailorName: data.tailor!.name }
                 });
               } else {
                 (navigation as any).navigate('Orders', {
                   screen: 'OrderList',
-                  params: { tailorId: tailor.id, tailorName: tailor.name }
+                  params: { tailorId: data.tailor!.id, tailorName: data.tailor!.name }
                 });
               }
             }}
@@ -297,7 +296,8 @@ const TailorDetails = () => {
       </View>
     </ScrollView>
   );
-};
+});
 
+TailorDetails.displayName = 'TailorDetails';
 
 export default TailorDetails;

@@ -11,7 +11,7 @@ export const profileScreenStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: 16,
-    paddingTop: Platform.select({ ios: 68, android: 51 }) as number,
+    paddingTop: Platform.select({ ios: 68, android: 53 }) as number,
     paddingBottom: Platform.select({ ios: 8, android: 12 }) as number,
     backgroundColor: colors.white,
     borderBottomWidth: 1,

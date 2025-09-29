@@ -94,6 +94,9 @@ export default {
     customer: {
       customer: 'ग्राहक',
       customers: 'ग्राहक',
+      contactInformation: 'संपर्क जानकारी',
+      customerSince: 'ग्राहक तब से',
+      phoneNumber: 'फोन नंबर',
       addCustomer: 'ग्राहक जोड़ें',
       editCustomer: 'ग्राहक संपादित करें',
       deleteCustomer: 'ग्राहक हटाएं',
@@ -120,6 +123,9 @@ export default {
     tailor: {
       tailor: 'दर्जी',
       tailors: 'दर्जी',
+      contactInformation: 'संपर्क जानकारी',
+      phoneNumber: 'फोन नंबर',
+      shop: 'दुकान',
       addTailor: 'दर्जी जोड़ें',
       editTailor: 'दर्जी संपादित करें',
       deleteTailor: 'दर्जी हटाएं',
@@ -130,6 +136,9 @@ export default {
       addedSuccess: 'दर्जी सफलतापूर्वक जोड़ा गया',
       createFailed: 'दर्जी जोड़ना विफल',
       noAddress: 'पता नहीं',
+      name: 'दर्जी का नाम',
+      phone: 'फोन नंबर',
+      address: 'पता',
     },
     order: {
       order: 'ऑर्डर',
@@ -254,10 +263,15 @@ export default {
       noMeasurements: 'कोई माप नहीं मिला',
     },
     placeholders: {
-      fullName: 'पूरा नाम लिखें',
-      phone: 'फोन नंबर लिखें',
-      address: 'पता लिखें',
+      fullName: 'पूरा नाम दर्ज करें',
+      phone: 'फोन नंबर दर्ज करें',
+      address: 'पता दर्ज करें',
+      email: 'ईमेल पता दर्ज करें',
+      search: 'खोजें...',
       searchOrder: 'ऑर्डर का नाम या बुक नंबर खोजें',
+      notes: 'नोट्स दर्ज करें...',
+      quantity: 'मात्रा दर्ज करें',
+      price: 'कीमत दर्ज करें',
     },
     home: {
       hi: 'नमस्ते, {{name}}',

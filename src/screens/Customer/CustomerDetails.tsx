@@ -9,6 +9,7 @@ import apiService from '../../services/api';
 import Button from '../../components/Button';
 import { CustomerStackParamList } from '../../navigation/types';
 import { RegularText, TitleText } from '../../components/CustomText';
+import { useTranslation } from 'react-i18next';
 import colors from '../../constants/colors';
 
 // CustomerDetailsRouteParams was unused; removed to satisfy linter
@@ -24,6 +25,7 @@ interface Customer {
 }
 
 const CustomerDetails = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<any>();
   const route = useRoute<RouteProp<CustomerStackParamList, 'CustomerDetails'>>();
   const { customerId } = route.params;
@@ -141,7 +143,7 @@ const CustomerDetails = () => {
       {/* Customer Information Section */}
       <View style={styles.infoSection}>
         <View style={styles.sectionHeader}>
-          <TitleText style={styles.sectionTitle}>Contact Information</TitleText>
+          <TitleText style={styles.sectionTitle}>{t('customer.contactInformation') || 'Contact Information'}</TitleText>
           <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
             <Icon name="delete" size={24} color="#ef4444" />
           </TouchableOpacity>
@@ -153,7 +155,7 @@ const CustomerDetails = () => {
             <Icon name="phone" size={20} color={colors.brand} />
           </View>
           <View style={styles.infoContent}>
-            <RegularText style={styles.infoLabel}>Phone Number</RegularText>
+            <RegularText style={styles.infoLabel}>{t('customer.phoneNumber') || 'Phone Number'}</RegularText>
             <RegularText style={styles.infoValue}>{customer.mobileNumber}</RegularText>
           </View>
         </View>
@@ -164,9 +166,9 @@ const CustomerDetails = () => {
             <Icon name="location-on" size={20} color={colors.brand} />
           </View>
           <View style={styles.infoContent}>
-            <RegularText style={styles.infoLabel}>Address</RegularText>
+            <RegularText style={styles.infoLabel}>{t('customer.address') || 'Address'}</RegularText>
             <RegularText style={styles.infoValue}>
-              {customer.address || 'No address provided'}
+              {customer.address || (t('customer.noAddress') || 'No address provided')}
             </RegularText>
           </View>
         </View>
@@ -177,7 +179,7 @@ const CustomerDetails = () => {
             <Icon name="event" size={20} color={colors.brand} />
           </View>
           <View style={styles.infoContent}>
-            <RegularText style={styles.infoLabel}>Customer Since</RegularText>
+            <RegularText style={styles.infoLabel}>{t('customer.customerSince') || 'Customer Since'}</RegularText>
             <RegularText style={styles.infoValue}>
               {new Date(customer.createdAt).toLocaleDateString()}
             </RegularText>
@@ -190,7 +192,7 @@ const CustomerDetails = () => {
         <View style={styles.buttonRow}>
           <Button
             variant="gradient"
-            title="Edit Customer"
+            title={t('customer.editCustomer') || 'Edit Customer'}
             height={56}
            
             gradientColors={['#229B73', '#1a8f6e', '#000000']}
@@ -201,7 +203,7 @@ const CustomerDetails = () => {
           
           <Button
             variant="light"
-            title="Create Order"
+            title={t('order.createOrder') || 'Create Order'}
             height={56}
             onPress={() => {
               const root = (navigation as any).getParent?.();

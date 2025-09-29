@@ -78,7 +78,7 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   textArea: {
-    height: 100,
+    height: 130,
     textAlignVertical: 'top',
   },
   itemContainer: {
@@ -150,7 +150,7 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
     alignItems: 'stretch',
-    paddingTop: 100,
+    paddingTop: 200,
   },
   measurementModalContent: {
     backgroundColor: colors.white,
@@ -183,11 +183,10 @@ export const styles = StyleSheet.create({
   },
   clothModalScroll: {
     flex: 1,
-    marginBottom: 4,
-    minHeight: 300,
+    marginBottom: 20,
   },
   clothModalScrollContent: {
-    paddingBottom: 8,
+    paddingBottom: 20,
   },
   modalTitle: {
     fontSize: 20,
@@ -200,8 +199,8 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'space-between',
-    marginTop: 20,
-    marginBottom: 8,
+    marginTop: 0,
+    marginBottom: 10,
   },
   modalButton: {
     flex: 1,

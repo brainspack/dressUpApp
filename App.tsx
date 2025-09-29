@@ -184,6 +184,7 @@ function CustomerStackNavigator() {
 }
 
 function TailorStackNavigator() {
+  const { t } = useTranslation();
   return (
     <TailorStack.Navigator
       screenOptions={{
@@ -196,7 +197,7 @@ function TailorStackNavigator() {
         options={{
           title: '',
           headerLeft: () => (
-            <StackHeaderTitle icon="scissors-cutting" label="Tailors" />
+            <StackHeaderTitle icon="scissors-cutting" label={t('tailor.tailors')} />
           ),
         }}
       />
@@ -205,7 +206,7 @@ function TailorStackNavigator() {
         component={TailorDetails}
         options={({ navigation: _navigation }) => ({
           headerTitle: () => (
-            <StackHeaderTitle icon="scissors-cutting" label="Tailor Details" />
+            <StackHeaderTitle icon="scissors-cutting" label={t('tailor.tailorDetails')} />
           ),
           headerBackTitleVisible: false,
         })}
@@ -215,7 +216,7 @@ function TailorStackNavigator() {
         component={AddTailor}
         options={({ navigation: _navigation }) => ({
           headerTitle: () => (
-            <StackHeaderTitle icon="scissors-cutting" label="Add Tailor" />
+            <StackHeaderTitle icon="scissors-cutting" label={t('tailor.addTailor')} />
           ),
           headerBackTitleVisible: false,
         })}
@@ -225,7 +226,7 @@ function TailorStackNavigator() {
         component={EditTailor}
         options={({ navigation: _navigation }) => ({
           headerTitle: () => (
-            <StackHeaderTitle icon="scissors-cutting" label="Edit Tailor" />
+            <StackHeaderTitle icon="scissors-cutting" label={t('tailor.editTailor')} />
           ),
           headerBackTitleVisible: false,
         })}
@@ -340,6 +341,6 @@ function App(): React.JSX.Element {
 export default App;
 
 const styles = StyleSheet.create({
-  headerRow: { flexDirection: 'row', alignItems: 'center' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', paddingLeft: 8 },
   headerText: { fontSize: 20, fontWeight: '700', color: '#111827' },
 });

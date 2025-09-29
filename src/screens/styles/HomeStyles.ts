@@ -244,7 +244,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
-    paddingRight: 10, // Added small padding to prevent dropdown cutoff
+    paddingRight: 20, // Added small padding to prevent dropdown cutoff
   },
   chartRange: {
     alignItems: 'flex-end',
@@ -259,7 +259,7 @@ export const styles = StyleSheet.create({
   legendRow: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
-    gap: 16,
+    gap: 0,
     marginBottom: 8,
     paddingLeft: 8,
     width: '100%',
@@ -290,7 +290,7 @@ export const styles = StyleSheet.create({
   },
   pieLeft: {
     flexShrink: 0,
-    paddingLeft: 18,
+    paddingLeft: 28,
     marginLeft: 0,
     marginRight: 12,
   },

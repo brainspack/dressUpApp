@@ -94,6 +94,9 @@ export default {
     customer: {
       customer: 'Customer',
       customers: 'Customers',
+      contactInformation: 'Contact Information',
+      customerSince: 'Customer Since',
+      phoneNumber: 'Phone Number',
       addCustomer: 'Add Customer',
       editCustomer: 'Edit Customer',
       deleteCustomer: 'Delete Customer',
@@ -130,6 +133,9 @@ export default {
       addedSuccess: 'Tailor added successfully',
       createFailed: 'Failed to add tailor',
       noAddress: 'No address',
+      name: 'Tailor Name',
+      phone: 'Phone Number',
+      address: 'Address',
     },
     order: {
       order: 'Order',
@@ -258,7 +264,12 @@ export default {
       fullName: 'Enter full name',
       phone: 'Enter phone number',
       address: 'Enter address',
+      email: 'Enter email address',
+      search: 'Search...',
       searchOrder: 'Search order name or book no.',
+      notes: 'Enter notes...',
+      quantity: 'Enter quantity',
+      price: 'Enter price',
     },
     home: {
       hi: 'Hi, {{name}}',

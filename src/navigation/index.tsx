@@ -147,16 +147,42 @@ const OrderNavigator = () => {
 
 // Tailor Navigator
 const TailorNavigator = () => {
+  const { t, i18n } = useTranslation();
+  
+  // Force re-render when language changes
+  const screenOptions = React.useMemo(() => ({
+    headerShown: true,
+    headerStyle: {
+      backgroundColor: colors.white,
+    },
+    headerTintColor: colors.textPrimary,
+    headerTitleStyle: {
+      fontWeight: 'bold' as const,
+    },
+  }), [i18n.language]);
+
   return (
-    <TailorStack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <TailorStack.Screen name="TailorList" component={TailorList} options={{ title: 'Tailors' }} />
-      <TailorStack.Screen name="TailorDetails" component={TailorDetails} options={{ title: 'Tailor Details' }} />
-      <TailorStack.Screen name="AddTailor" component={AddTailor} options={{ title: 'Add Tailor' }} />
-      <TailorStack.Screen name="EditTailor" component={EditTailor} options={{ title: 'Edit Tailor' }} />
+    <TailorStack.Navigator screenOptions={screenOptions}>
+      <TailorStack.Screen 
+        name="TailorList" 
+        component={TailorList} 
+        options={({ route }) => ({ title: t('tailor.tailors') })}
+      />
+      <TailorStack.Screen 
+        name="TailorDetails" 
+        component={TailorDetails} 
+        options={({ route }) => ({ title: t('tailor.tailorDetails') })}
+      />
+      <TailorStack.Screen 
+        name="AddTailor" 
+        component={AddTailor} 
+        options={({ route }) => ({ title: t('tailor.addTailor') })}
+      />
+      <TailorStack.Screen 
+        name="EditTailor" 
+        component={EditTailor} 
+        options={({ route }) => ({ title: t('tailor.editTailor') })}
+      />
     </TailorStack.Navigator>
   );
 };

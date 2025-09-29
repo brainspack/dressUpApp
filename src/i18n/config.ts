@@ -39,4 +39,35 @@ const initI18n = async () => {
 
 initI18n();
 
+// Helper functions for language management
+export const loadStoredLanguage = async (): Promise<string> => {
+  try {
+    const storedData = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (storedData) {
+      const parsed = JSON.parse(storedData);
+      return parsed.state?.language || 'en';
+    }
+    return 'en';
+  } catch (error) {
+    console.error('Failed to load stored language:', error);
+    return 'en';
+  }
+};
+
+export const changeLanguage = async (language: string): Promise<void> => {
+  try {
+    await i18n.changeLanguage(language);
+    // Also update the language store if it exists
+    const storedData = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (storedData) {
+      const parsed = JSON.parse(storedData);
+      parsed.state.language = language;
+      await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, JSON.stringify(parsed));
+    }
+  } catch (error) {
+    console.error('Failed to change language:', error);
+    throw error;
+  }
+};
+
 export default i18n; 
