@@ -290,7 +290,7 @@ export const styles = StyleSheet.create({
   },
   pieLeft: {
     flexShrink: 0,
-    paddingLeft: 28,
+    paddingLeft: 45,
     marginLeft: 0,
     marginRight: 12,
   },

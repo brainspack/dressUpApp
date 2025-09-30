@@ -204,14 +204,16 @@ const Register = ({ setIsAuthenticated, setAccessToken }: RegisterProps) => {
 
             <View style={styles.buttonContainer}>
               {!showOtpInput ? (
-                <Button title="Send OTP" onPress={handleSendOtp} variant="green" disabled={isLoading} style={styles.sendOtpButton} textStyle={styles.sendOtpText} />
+                <View style={styles.buttonRow}>
+                  <Button title="Send OTP" onPress={handleSendOtp} variant="green" disabled={isLoading} style={styles.halfButton} textStyle={styles.sendOtpText} />
+                  <Button title="Back to Login" onPress={() => navigation.navigate('Login')} variant="light" style={styles.halfButton} textStyle={styles.otpActionText}/>
+                </View>
               ) : (
-                <>
-                  <Button title="Verify OTP" onPress={handleVerifyOtp} variant="green" disabled={isLoading} textStyle={styles.otpActionText} />
-                  <Button title="Resend OTP" onPress={handleSendOtp} variant="light" disabled={isLoading} textStyle={styles.otpActionText} />
-                </>
+                <View style={styles.buttonRow}>
+                  <Button title="Verify OTP" onPress={handleVerifyOtp} variant="green" disabled={isLoading} textStyle={styles.otpActionText} style={styles.halfButton} />
+                  <Button title="Resend OTP" onPress={handleSendOtp} variant="light" disabled={isLoading} textStyle={styles.otpActionText} style={styles.halfButton} />
+                </View>
               )}
-              <Button title="Back to Login" onPress={() => navigation.navigate('Login')} variant="light" style={styles.sendOtpButton} textStyle={styles.otpActionText}/>
             </View>
           </View>
         </View>
@@ -227,7 +229,7 @@ const styles = StyleSheet.create({
   overlay: { flex: 1 },
   backArrow: { fontSize: 24, color: '#ffffff', margin: 20 },
   waveSvg: { position: 'absolute', top: 70, left: 0 },
-  formWrapper: { flex: 1, paddingHorizontal: 24, paddingTop: 320 },
+  formWrapper: { flex: 1, paddingHorizontal: 24, paddingTop: 260 },
   title: { color: '#ffffff', fontSize: 32, fontWeight: '700', marginBottom: 40 },
   shadowText: {
     textShadowColor: 'rgba(0,0,0,0.5)',
@@ -237,6 +239,15 @@ const styles = StyleSheet.create({
   formContainer: { marginBottom: 24 },
   inputContainer: { marginBottom: 10 },
   buttonContainer: { gap: 12, marginTop: 8 },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  halfButton: {
+    flex: 1,
+    borderRadius: 25,
+  },
   sendOtpButton: {
     alignSelf: 'center',
     width: '70%',

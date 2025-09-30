@@ -824,7 +824,7 @@ const Home = () => {
                       chartConfig={chartConfig as any}
                       accessor="population"
                       backgroundColor="transparent"
-                      paddingLeft="0"
+                      paddingLeft="5"
                       hasLegend={false}
                       center={[20, 0]}
                       style={{ marginLeft: 0 }}
@@ -854,7 +854,7 @@ const Home = () => {
                       chartConfig={chartConfig as any}
                       accessor="population"
                       backgroundColor="transparent"
-                      paddingLeft="16"
+                      paddingLeft="5"
                       hasLegend={false}
                       center={[20, 0]}
                       style={{ marginLeft: 0 }}
