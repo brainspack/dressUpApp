@@ -398,7 +398,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
-    marginRight: 8,
+    marginRight: 4,
   },
   typeText: {
     color: colors.white,
