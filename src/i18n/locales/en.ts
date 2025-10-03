@@ -63,7 +63,7 @@ export default {
     status: {
       all_orders: 'All Orders',
       pending: 'Pending',
-      in_progress: 'In Progress',
+      in_progress: 'Progress',
       ready: 'Ready',
       delivered: 'Delivered',
       cancelled: 'Cancelled',
