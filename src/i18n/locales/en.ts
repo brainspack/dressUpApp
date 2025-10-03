@@ -71,6 +71,7 @@ export default {
     profile: {
       profile: 'Profile',
       change_photo: 'Change Photo',
+      addPhoto: 'Add Photo',
       name: 'Name',
       phone: 'Phone',
       address: 'Address',

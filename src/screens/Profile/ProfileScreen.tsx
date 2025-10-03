@@ -35,6 +35,8 @@ const ProfileScreen = () => {
   const [imageCacheKey, setImageCacheKey] = useState<number>(Date.now());
   const [isImageLoading, setIsImageLoading] = useState<boolean>(false);
 
+  // Removed force re-render logic to prevent infinite loading
+
   useEffect(() => {
     // Load user data from context
     if (userInfo) {
@@ -322,6 +324,9 @@ const ProfileScreen = () => {
 
   console.log('Current language in render:', currentLanguage, 'Selected:', selectedLanguage);
   console.log('ProfileScreen: Current profileImage state:', profileImage);
+
+  // Removed loading check to prevent infinite loading
+  // The fallback text will handle missing translations
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>

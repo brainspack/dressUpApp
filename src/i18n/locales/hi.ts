@@ -71,6 +71,7 @@ export default {
     profile: {
       profile: 'प्रोफ़ाइल',
       change_photo: 'फोटो बदलें',
+      addPhoto: 'फोटो जोड़ें',
       name: 'नाम',
       phone: 'फोन',
       address: 'पता',

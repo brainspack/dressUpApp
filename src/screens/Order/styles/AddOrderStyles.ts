@@ -71,7 +71,7 @@ export const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(168, 193, 183, 0.25)',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
@@ -150,7 +150,7 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
     alignItems: 'stretch',
-    paddingTop: 200,
+    paddingTop: 100,
   },
   measurementModalContent: {
     backgroundColor: colors.white,
@@ -197,10 +197,9 @@ export const styles = StyleSheet.create({
   },
   modalButtons: {
     flexDirection: 'row',
-    gap: 8,
     justifyContent: 'space-between',
-    marginTop: 0,
-    marginBottom: 10,
+    marginTop:10,
+    marginBottom: 0,
   },
   modalButton: {
     flex: 1,
@@ -213,8 +212,9 @@ export const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
     backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
+    // borderWidth: 1,
+    // borderColor: colors.border,
+    borderColor: 'rgba(168, 193, 183, 0.25)',
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 20,
@@ -538,7 +538,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 12,
-    marginTop: 16,
+    marginTop: 15,
   },
   outfitInfoHeader: {
     alignItems: 'center',

@@ -31,27 +31,15 @@ const Button = ({ title, onPress, variant = 'primary', style, textStyle, height 
     justifyContent: 'center',
     // Ensure consistent height across platforms
     minHeight: height,
-    // Platform-specific styling for consistency
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
   };
 
   const containerByVariant: Record<NonNullable<ButtonProps['variant']>, ViewStyle> = {
     primary: { backgroundColor: '#4A90E2' },
     secondary: { backgroundColor: '#ccc' },
     light: {
-      backgroundColor: 'rgba(255,255,255,0.92)',
+      backgroundColor: '#FFFFFF',
       borderWidth: 1,
-      borderColor: 'rgba(85,173,136,0.25)',
+      borderColor: 'rgba(170, 177, 174, 0.25)',
     },
     green: { backgroundColor: '#2DBE91' },
     gradient: {},
@@ -137,6 +125,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
+    backgroundColor: 'transparent',
   },
   iconContainer: {
     marginRight: 8,

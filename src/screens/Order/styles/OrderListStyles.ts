@@ -156,7 +156,7 @@ export const styles = StyleSheet.create({
     paddingRight: 12,
   },
   orderHeader: {
-    width: '145%',
+    width: '153%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

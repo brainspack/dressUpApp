@@ -5,7 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Text } from 'react-native';
 import colors from '../constants/colors';
 
 // Import screens
@@ -206,6 +206,22 @@ const MainNavigator = () => {
           },
           shadowOpacity: 0.1,
           shadowRadius: 3,
+          height: 60,
+          paddingBottom: 5,
+          paddingTop: 5,
+        },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '500',
+          textAlign: 'center',
+          maxWidth: 60,
+          overflow: 'hidden',
+        },
+        tabBarItemStyle: {
+          justifyContent: 'center',
+          alignItems: 'center',
+          flex: 1,
+          minWidth: 0,
         }
       }}
     >
@@ -213,7 +229,13 @@ const MainNavigator = () => {
         name="Home" 
         component={Home}
         options={{
-          tabBarLabel: t('order.home'),
+          tabBarLabel: ({ focused }) => (
+            <View style={{ alignItems: 'center', justifyContent: 'center', width: 50 }}>
+              <Text style={{ fontSize: 9, fontWeight: '500', color: focused ? colors.brand : colors.gray400, textAlign: 'center' }}>
+                {t('order.home')}
+              </Text>
+            </View>
+          ),
           tabBarIcon: ({ color, size }) => (
             <Icon name="home" size={size} color={color} />
           ),
@@ -224,7 +246,13 @@ const MainNavigator = () => {
         component={CustomerNavigator}
         options={{
           headerShown: false,
-          tabBarLabel: t('order.customers'),
+          tabBarLabel: ({ focused }) => (
+            <View style={{ alignItems: 'center', justifyContent: 'center', width: 50 }}>
+              <Text style={{ fontSize: 9, fontWeight: '500', color: focused ? colors.brand : colors.gray400, textAlign: 'center' }}>
+                {t('order.customers')}
+              </Text>
+            </View>
+          ),
           tabBarIcon: ({ color, size }) => (
             <Icon name="account-group" size={size} color={color} />
           ),
@@ -241,7 +269,13 @@ const MainNavigator = () => {
         component={TailorNavigator}
         options={{
           headerShown: false,
-          tabBarLabel: t('order.tailors'),
+          tabBarLabel: ({ focused }) => (
+            <View style={{ alignItems: 'center', justifyContent: 'center', width: 50 }}>
+              <Text style={{ fontSize: 9, fontWeight: '500', color: focused ? colors.brand : colors.gray400, textAlign: 'center' }}>
+                {t('order.tailors')}
+              </Text>
+            </View>
+          ),
           tabBarIcon: ({ color, size }) => (
             <Icon name="scissors-cutting" size={size} color={color} />
           ),
@@ -258,7 +292,13 @@ const MainNavigator = () => {
         component={OrderNavigator}
         options={{
           headerShown: false,
-          tabBarLabel: t('order.orders'),
+          tabBarLabel: ({ focused }) => (
+            <View style={{ alignItems: 'center', justifyContent: 'center', width: 50 }}>
+              <Text style={{ fontSize: 9, fontWeight: '500', color: focused ? colors.brand : colors.gray400, textAlign: 'center' }}>
+                {t('order.orders')}
+              </Text>
+            </View>
+          ),
           tabBarIcon: ({ color, size }) => (
             <Icon name="clipboard-list" size={size} color={color} />
           ),
@@ -274,7 +314,13 @@ const MainNavigator = () => {
         name="Profile" 
         component={ProfileScreen}
         options={{
-          tabBarLabel: t('order.profile'),
+          tabBarLabel: ({ focused }) => (
+            <View style={{ alignItems: 'center', justifyContent: 'center', width: 50 }}>
+              <Text style={{ fontSize: 9, fontWeight: '500', color: focused ? colors.brand : colors.gray400, textAlign: 'center' }}>
+                {t('order.profile')}
+              </Text>
+            </View>
+          ),
           tabBarIcon: ({ color, size }) => (
             <Icon name="account" size={size} color={color} />
           ),

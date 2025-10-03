@@ -92,7 +92,7 @@ export const MeasurementModal: React.FC<MeasurementModalProps> = ({
             variant="light"
             onPress={onClose}
             height={48}
-            style={{ borderRadius: 12, flex: 1, marginRight: 6 }}
+            style={{ borderRadius: 12, width: '48%', backgroundColor: '#FFFFFF', elevation: 0, shadowOpacity: 0 }}
           />
           <Button
             title={t('order.save')}
@@ -100,7 +100,7 @@ export const MeasurementModal: React.FC<MeasurementModalProps> = ({
             onPress={onSave}
             height={48}
             gradientColors={['#229B73', '#1a8f6e', '#000000']}
-            style={{ borderRadius: 12, flex: 1, marginLeft: 6 }}
+            style={{ borderRadius: 12, width: '48%' }}
           />
         </View>
       </View>
